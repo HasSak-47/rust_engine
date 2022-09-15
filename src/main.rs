@@ -1,4 +1,5 @@
 mod lily;
+use crate::lily::function_drawer;
 
 use std::{io, thread, time::Duration};
 use tui::{
@@ -14,6 +15,10 @@ use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, read},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+
+fn drawer(x : &f32) -> f32{
+    return x.clone();
+}
 
 fn fake_main() -> Result<(), io::Error>{
 
@@ -34,11 +39,17 @@ fn fake_main() -> Result<(), io::Error>{
         // start rendering part 
         terminal.draw(|f| {
             let widget_border = f.size();
-            let graph_border = Block::default().title("graph").borders(Borders::ALL);
+            let drawer = function_drawer::FunctionDrawer{
+                beg_x : -1.0,
+                beg_y : -0.5,
+                end_x :  1.0,
+                end_y :  0.5,
 
-            let canvas = canvas::Canvas::default()
-                .block(Block::default().title("graph").borders(Borders::ALL));
-            f.render_widget(graph_border, widget_border);
+                function: drawer
+            };
+            //let graph_border = Block::default().title("graph").borders(Borders::ALL);
+            //f.render_widget(graph_border, widget_border);
+            f.render_widget(drawer, widget_border);
         })?;
         match crossterm::event::poll(Duration::from_millis(1)) {
             Ok(polled) => if !polled {continue;},
