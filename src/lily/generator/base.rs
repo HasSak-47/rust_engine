@@ -1,4 +1,3 @@
-
 pub type Seed64 = u64;
 
 pub trait Generator<ReturnT, InT> {

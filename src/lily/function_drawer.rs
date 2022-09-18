@@ -1,37 +1,34 @@
 use tui::{
-    widgets::{Widget, Block, Borders,
+    widgets::{
+        Widget,
         canvas::{
-            MapResolution,
-            Rectangle,
             Canvas,
             Line,
-            Map,
         }
     },
     style::Color,
     layout::Rect,
-    buffer::{Buffer, Cell}, symbols,
+    buffer::Buffer,
+    symbols,
 }; 
 
-use std::vec;
-
 pub struct FunctionDrawer{
-    pub beg_x: f32,
-    pub end_x: f32,
-    pub beg_y: f32,
-    pub end_y: f32,
+    pub beg_x: f64,
+    pub end_x: f64,
+    pub beg_y: f64,
+    pub end_y: f64,
 
-    pub function: fn(&f32) -> f32, 
+    pub function: fn(&f64) -> f64, 
 }
 
 impl Widget for FunctionDrawer{
     fn render(self, area: Rect, buf: &mut Buffer){
         let mut lines = Vec::<Line>::new();
-        let x_con = (self.end_x - self.beg_x) / (area.width as f32);
+        let x_con = (self.end_x - self.beg_x) / (area.width as f64);
         for i in 0..area.width{
             let xs = [
-                self.beg_x + (i as f32 * x_con),
-                self.beg_x + ((i + 1) as f32 * x_con),
+                self.beg_x + (i as f64 * x_con),
+                self.beg_x + ((i + 1) as f64 * x_con),
             ];
             let ys = [
                 (self.function)(&xs[0]),
@@ -60,15 +57,58 @@ impl Widget for FunctionDrawer{
         ;
         c.render(area, buf);
     }
-    /*
-    fn render(self, area: Rect, buf: &mut Buffer){
-        buf.clone_from(&Buffer::empty(area));
-        let x_step = ((self.end_x - self.beg_x) / (area.width  as f32)).abs();
-        for i in 0..area.width{
-            let x = ((i + 1) as f32 * x_step) + self.beg_x;
-            let y = (self.function)(&x);
-        }
-    }
-    */
 }
 
+#[derive(Clone)]
+pub struct RelationDrawer{
+    pub beg_x: f64,
+    pub end_x: f64,
+    pub beg_y: f64,
+    pub end_y: f64,
+
+    pub dist : f64,
+
+    pub function: fn(&f64, &f64) -> f64, 
+}
+
+impl Widget for RelationDrawer {
+    fn render(self, area: Rect, buf: &mut Buffer){
+        let x_con = (self.end_x - self.beg_x) / (area.width as f64);
+        let y_con = (self.end_y - self.beg_y) / (area.height as f64);
+        let symbols = ['$', '#', 'o', '+', '°', ',', '.'];
+
+        for i in 0..area.width{
+            for j in 0..area.height {
+                let x = self.end_x + (i as f64 * x_con);
+                let y = self.end_y + (j as f64 * y_con); 
+
+                let d = 1.0 - (self.function)(&x, &y);
+                if d <= self.dist {
+                    let quart = (6.0 * d / self.dist).round() as usize;
+                    buf.get_mut(i, j).symbol = symbols[quart].to_string();
+                }
+            }
+        }
+    }
+}
+
+impl Widget for &RelationDrawer {
+    fn render(self, area: Rect, buf: &mut Buffer){
+        let x_con = (self.end_x - self.beg_x) / (area.width as f64);
+        let y_con = (self.end_y - self.beg_y) / (area.height as f64);
+        let symbols = ['$', '#', 'o', '+', '°', ',', '.'];
+
+        for i in 0..area.width{
+            for j in 0..area.height {
+                let x = self.end_x + (i as f64 * x_con);
+                let y = self.end_y + (j as f64 * y_con); 
+
+                let d = 1.0 - (self.function)(&x, &y);
+                if d <= self.dist {
+                    let quart = (6.0 * d / self.dist).round() as usize;
+                    buf.get_mut(i, j).symbol = symbols[quart].to_string();
+                }
+            }
+        }
+    }
+}
