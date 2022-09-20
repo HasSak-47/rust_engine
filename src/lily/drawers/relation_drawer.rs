@@ -1,14 +1,14 @@
-use core::primitive::str;
 use tui::{
     widgets::Widget,
     buffer::Buffer,
+    buffer::Cell,
     layout::Rect,
+    style::Color,
+    style::Modifier,
 };
 
-static SYMBOLS: &str = "#0Oo°. ";
-//static SYMBOLS: &str = "ÆÑÊŒØMÉËÈÃÂWQBÅæ#NÁþEÄÀHKRŽœXgÐêqÛŠÕÔA€ßpmãâG¶øðé8ÚÜ$ëdÙýèÓÞÖåÿÒb¥FDñáZPäšÇàhû§ÝkŸ®S9žUTe6µOyxÎ¾f4õ5ôú&aü™2ùçw©Y£0VÍL±3ÏÌóC@nöòs¢u‰½¼‡zJƒ%¤Itocîrjv1lí=ïì<>i7†[¿?×}*{+()\\/»«•¬|!¡÷¦¯—^ª„”“~³º²–°­¹‹›;:’‘‚’˜ˆ¸…·¨´` ";
-static mut SYM_VEC: Vec<String> = Vec::new();
-static mut SYM_LEN: usize = SYMBOLS.len(); 
+static mut SYM_VEC: Vec<Cell> = Vec::new();
+static mut SYM_LEN: usize = 0;
 
 pub struct RelationDrawer{
     pub x_off: f64,
@@ -22,17 +22,13 @@ pub struct RelationDrawer{
 
 pub fn setup() {
     unsafe {
-        SYM_LEN = SYMBOLS.chars().count();
-        for i in 0..SYM_LEN{
-            let push_str: String;
-            match SYMBOLS.chars().nth(i){
-                None => push_str = "X".to_string(),
-                Some(s) => push_str = s.to_string(),
-            }
-            for j in 0..i{
-                SYM_VEC.push(push_str.to_string());
-            }
+        for i in 0..8{
+            let inte: u8 = u8::MAX >> i;
+            let col: Color = Color::Rgb(inte, inte, inte);
+            let modif: Modifier = Modifier::BOLD;
+            SYM_VEC.push(Cell { symbol: " ".to_string(), fg: col, bg: col, modifier: modif})
         }
+        SYM_VEC.reverse();
         SYM_LEN = SYM_VEC.len();
     }
 }
@@ -44,17 +40,18 @@ impl Widget for &RelationDrawer{
 
         for i in 0..area.width{
             for j in 0..area.height{
-                let x = (i as f64) * x_con + self.x_off;
-                let y = (j as f64) * y_con + self.y_off;
+                let x = (i as f64) * x_con + self.x_off / 2.0;
+                let y = (j as f64) * y_con + self.y_off / 2.0;
 
-                let mut d: usize;
-                unsafe {
-                    d = (SYM_LEN as f64 * (self.function)(&x, &y) / self.dist) as usize;
-                    if d >= SYM_LEN{
-                        d = SYM_LEN - 1;
-                    }
-                    buf.get_mut(i, j).symbol = SYM_VEC.get(d).unwrap().clone();
-                }
+                let result = (self.function)(&x, &y);
+                let d = (255 as f64 * (result * result) / self.dist) as u8;
+                let cell = Cell {
+                    symbol: " ".to_string(),
+                    fg: Color::Rgb(d, d,  d),
+                    bg: Color::Rgb(d, d, d),
+                    modifier: Modifier::BOLD,
+                };
+                buf.get_mut(i, j).clone_from(&cell);
             }
         }
     }

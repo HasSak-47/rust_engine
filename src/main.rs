@@ -42,13 +42,13 @@ fn main() -> Result<(), io::Error>{
         x_zm :  2.0,
         y_zm :  1.0,
 
-        dist : 0.9,
+        dist : 1.0,
         function: bubble::bubble_gen_2d, 
     };
     let mut input: char = ' ';
     let mut debug_escape: bool = false;
-    let mut x_off = 0.001;
-    let mut y_off = 0.001;
+    let mut x_off = 0.01;
+    let mut y_off = 0.01;
     let mut instant = Instant::now();
     loop{
 
