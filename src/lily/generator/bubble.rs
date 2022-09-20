@@ -18,7 +18,7 @@ pub fn bubble_gens_2d(x: &f64, y: &f64, seed: &Seed64) -> f64{
         let dx = x - px;
         let dy = y - py;
         
-        let dist = ( dx * dx + dy * dy ).sqrt();
+        let dist = dx * dx + dy * dy;
         if dist < min{
             min = dist;
         }

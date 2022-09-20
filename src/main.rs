@@ -21,15 +21,19 @@ use crossterm::{
 };
 
 use crate::lily::{
-    drawers::{
-        relation_drawer::{self, RelationDrawer},
-    },
+    inputs::controller,
+    drawers::relation_drawer::RelationDrawer,
     generator::bubble,
 };
 
+//fn main() {
+//    let x: f64 = -1210.923;
+//    println!("{}", bubble::fast_floor(&x))
+//}
+
 fn main() -> Result<(), io::Error>{
-    relation_drawer::setup();
     enable_raw_mode()?;
+    controller::init_io()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
@@ -39,7 +43,7 @@ fn main() -> Result<(), io::Error>{
     let mut drawer = RelationDrawer{
         x_off:  0.0,
         y_off:  0.0,
-        x_zm :  2.0,
+        x_zm :  1.0,
         y_zm :  1.0,
 
         dist : 1.0,
@@ -51,12 +55,10 @@ fn main() -> Result<(), io::Error>{
     let mut y_off = 0.01;
     let mut instant = Instant::now();
     loop{
-
         //rendering part
         terminal.draw(|f| {
             let border = f.size();
             f.render_widget(&drawer, border);
-            let time = instant.elapsed();
 
             let mut string: String = "".to_string();
             string.push_str(look_ahead[0].to_string().as_str());
@@ -66,57 +68,39 @@ fn main() -> Result<(), io::Error>{
             string.push_str(look_ahead[4].to_string().as_str());
             //let par_look = Paragraph::new(string);
             //f.render_widget(par_look, Rect{x: 0, y: 0, width: border.width, height: border.height});
+            let time = instant.elapsed();
             let par_time = Paragraph::new(time.as_millis().to_string());
             instant = Instant::now();
-            f.render_widget(par_time, Rect{x: 0, y: 0, width: border.width, height: border.height});
+            f.render_widget(par_time, Rect{x: 0, y: 0, width: 8, height: 1});
         })?;
 
         //read inputs
-        if crossterm::event::poll(Duration::from_millis(1))?{
-            match crossterm::event::read()?{
-               Event::FocusGained    => {},
-               Event::FocusLost      => {},
-               Event::Key(event_key) => {
-                   match event_key.code{
-                       KeyCode::Esc => debug_escape = true,
-                       KeyCode::Char(chr) => input = chr,
-                       KeyCode::Up    => {  drawer.y_off += y_off;},
-                       KeyCode::Down  => {  drawer.y_off -= y_off;},
-                       KeyCode::Left  => {  drawer.x_off -= x_off;},
-                       KeyCode::Right => {  drawer.x_off += x_off;},
-                       _ => {},
-                   }
-               },
-               Event::Mouse(_)       => {},
-               Event::Paste(_)       => {},
-               Event::Resize(_, _)   => {},
-            }
-            match input{
-                '+' => {
-                    drawer.x_zm /= 2.0;
-                    drawer.y_zm /= 2.0;
-                    x_off /= 2.0;
-                    y_off /= 2.0;
-                }
-                '-' => {
-                    drawer.x_zm *= 2.0;
-                    drawer.y_zm *= 2.0;
-                    x_off *= 2.0;
-                    y_off *= 2.0;
-                }
-                 _ => {}
-            }
-            look_ahead[0] = look_ahead[1];
-            look_ahead[1] = look_ahead[2];
-            look_ahead[2] = look_ahead[3];
-            look_ahead[3] = look_ahead[4];
-            look_ahead[4] = input;
+        match controller::get_key(){
+            KeyCode::Esc => debug_escape = true,
+            KeyCode::Char(chr) => input = chr.clone(),
+            KeyCode::Up    => { drawer.y_off += y_off;},
+            KeyCode::Down  => { drawer.y_off -= y_off;},
+            KeyCode::Left  => { drawer.x_off -= x_off;},
+            KeyCode::Right => { drawer.x_off += x_off;},
+            KeyCode::Null  => input = '\0',
+            _ => {},
         }
-        else{
-            input = 0 as char;
+        match input{
+            '+' => {
+                drawer.x_zm /= 2.0;
+                drawer.y_zm /= 2.0;
+                x_off /= 2.0;
+                y_off /= 2.0;
+            }
+            '-' => {
+                drawer.x_zm *= 2.0;
+                drawer.y_zm *= 2.0;
+                x_off *= 2.0;
+                y_off *= 2.0;
+            }
+             _ => {}
         }
-        
-        if debug_escape {
+        if debug_escape{
             break;
         }
 
