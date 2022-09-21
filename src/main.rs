@@ -26,11 +26,6 @@ use crate::lily::{
     generator::bubble,
 };
 
-//fn main() {
-//    let x: f64 = -1210.923;
-//    println!("{}", bubble::fast_floor(&x))
-//}
-
 fn main() -> Result<(), io::Error>{
     enable_raw_mode()?;
     controller::init_io()?;
@@ -74,7 +69,7 @@ fn main() -> Result<(), io::Error>{
             f.render_widget(par_time, Rect{x: 0, y: 0, width: 8, height: 1});
         })?;
 
-        //read inputs
+
         match controller::get_key(){
             KeyCode::Esc => debug_escape = true,
             KeyCode::Char(chr) => input = chr.clone(),
