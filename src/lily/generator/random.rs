@@ -3,6 +3,12 @@ use crate::lily::generator::converter::Converter;
 
 static mut RANDOM_SEED : u64 = 0;
 
+pub fn set_global_seed(seed: &u64){
+    unsafe{
+        RANDOM_SEED.clone_from(seed);
+    }
+}
+
 pub fn rands_noise(seed: &u64) -> u64{
     let mut return_val = Wrapping(seed.clone());
     return_val ^= 0xb00bad1c;

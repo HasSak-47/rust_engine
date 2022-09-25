@@ -6,6 +6,9 @@
 * a unit has 4 borders that can have n amounts of states
 */
 
+use std::vec::Vec;
+use crate::lily::generator::random::Random;
+
 type Collapsed = usize;
 
 type Uncollapsed = Vec<usize>;
@@ -34,35 +37,15 @@ struct Unknow{
 
 type Possible<T> = Vec<Unit<T>>;
 
-fn union(a: &mut Uncollapsed, b: &Uncollapsed){
-    for bval in b{
-        let mut found = false;
-        for aval in a.clone(){
-            if &aval == bval{
-                found = true;
-            }
-        }
-        if !found{
-            a.push(bval.clone());
-        }
-    }
-}
-
-fn inter(a: &mut Uncollapsed, b: &Uncollapsed){
-    let aux = a.clone();
-    a.clear();
-    for bval in b{
-        for aval in &aux{
-            if aval == bval{
-                a.push(aval.clone());
-            }
-        }
-    }
-}
-
 impl<T: Eq + PartialEq + Copy> Unit<T>{
-    pub const fn new(north: T, south: T, west: T, east: T) -> Unit<T>{
+    pub const fn new(north: T, south: T, east: T, west: T) -> Unit<T>{
         Unit::<T>{north, south, west, east}
+    }
+}
+
+impl Default for Cell{
+    fn default() -> Self {
+        Cell::Collapsed(0)
     }
 }
 
@@ -75,7 +58,13 @@ impl Cell {
         }
     
         Cell::Uncollapsed(v)
-
+    }
+    
+    pub fn size(&self) -> usize {
+        match self{
+            Cell::Collapsed(_) => 1,
+            Cell::Uncollapsed(u) => u.len(),
+        }
     }
 
     fn uncollapse(&self) -> Uncollapsed{
@@ -97,16 +86,6 @@ impl Cell {
             Cell::Uncollapsed(_) => None,
             Cell::Collapsed(col) => Some(col.clone()),
         }
-    }
-
-    fn combine(&mut self, other: &Cell){
-        let aux = other.uncollapse(); 
-        let mut this = self.uncollapse();
-
-        inter(&mut this, &aux);
-
-        self.clone_from(&Cell::Uncollapsed(this));
-        
     }
 
     pub fn collapse<BorderT : Eq + PartialEq + Copy>(
@@ -140,25 +119,19 @@ impl Cell {
             // i dont' know
             return;
         }
-        print!("didn't collapse\n");
         let mut new_self = Uncollapsed::new();
         for u in self.uncollapse(){
-            println!("evaluating {}", u);
             let mut found = false;
             for n in north.uncollapse(){
-                println!("north: {}", n);
                 if possible[n].south == possible[u].north{
                     found = true;
-                    println!("is south of north");
                     break;
                 }
             }
             if !found {continue;}
             found = false;
             for s in south.uncollapse(){
-                println!("south: {}", s);
                 if possible[s].north == possible[u].south{
-                    println!("is north of south");
                     found = true;
                     break;
                 }
@@ -184,12 +157,19 @@ impl Cell {
             new_self.push(u);
         }
         if new_self.len() == 1{
-            println!("collapsed to {}", new_self[0]);
             self.clone_from(&Cell::Collapsed(new_self[0]));
         }
         else if new_self.len() > 1{
             self.clone_from(&Cell::Uncollapsed(new_self));
         }
-        println!();
+    }
+
+    pub fn force_collapse(&mut self){
+        let coll = match self {
+            Cell::Collapsed(_) => return,
+            Cell::Uncollapsed(u) => u[usize::rand_range(&0, &u.len())],
+        };
+
+        self.clone_from(&Cell::Collapsed(coll));
     }
 }
