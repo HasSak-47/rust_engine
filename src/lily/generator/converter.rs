@@ -48,6 +48,7 @@ macro_rules! ConverterIntImpl {
 ConverterFloatImpl!(f32, 10);
 ConverterFloatImpl!(f64, 14);
 
+ConverterIntImpl!(usize);
 ConverterIntImpl!(u32);
 ConverterIntImpl!(u16);
 ConverterIntImpl!(u8 );
