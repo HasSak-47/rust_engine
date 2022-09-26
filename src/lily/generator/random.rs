@@ -14,9 +14,9 @@ pub fn rands_noise(seed: &u64) -> u64{
     return_val ^= 0xb00bad1c;
     return_val *= 0xd1cab00b;
     return_val ^= return_val >> 13;
-    //return_val *= 0xd1c510be;
-    //return_val ^= return_val>> 17;
-    //return_val *= 0xb00bad1c;
+    return_val *= 0xd1c510be;
+    return_val ^= return_val>> 17;
+    return_val *= 0xb00bad1c;
 
     return return_val.0;
 }

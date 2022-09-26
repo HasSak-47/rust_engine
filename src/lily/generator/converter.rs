@@ -39,6 +39,9 @@ macro_rules! ConverterIntImpl {
 
             fn convert_range(min: &$Type, max: &$Type, input: &u64) -> $Type{
                 let val = (input % (<$Type>::MAX as u64)) as $Type; 
+                if max - min == 0{
+                    return 0;
+                }
                 return min + (val % (max - min));
             }
         }

@@ -1,15 +1,21 @@
+#[allow(dead_code, unused_imports)]
 mod lily;
-use lily::generator::random::set_global_seed;
+
+use lily::generator::{random::set_global_seed, wave::FiniteMap};
 
 use crate::lily::generator::wave::{
     Unit, Cell
 };
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+use std::time::{UNIX_EPOCH, SystemTime, Duration};
+
+
+#[derive(Copy, Clone, Eq, PartialEq,Default)]
 enum Tborder{
     Rig = 0b01,
     Lef = 0b10,
     Tot = 0b11,
+    #[default]
     Non = 0b00,
 }
 
@@ -22,7 +28,6 @@ enum Tborder{
 type Tunit = Unit<Tborder>;
 
 fn main(){
-    set_global_seed(&10);
     let units = vec![
         Tunit::new( // air
             Tborder::Non,
@@ -51,7 +56,7 @@ fn main(){
         Tunit::new( // right dropoff
             Tborder::Non,
             Tborder::Lef,
-            Tborder::Lef,
+            Tborder::Rig,
             Tborder::Non,
         ),
         Tunit::new( // left cliff
@@ -68,59 +73,23 @@ fn main(){
         ),
     ];
 
-    //let mut test_board = [
-    //    [Cell::new_unc(0, 3), Cell::new_unc(0, 3), Cell::new_unc(0,3)],
-    //    [Cell::new_unc(0, 3), Cell::Collapsed(1) , Cell::new_unc(0,3)],
-    //    [Cell::new_unc(0, 3), Cell::new_unc(0, 3), Cell::new_unc(0,3)],
-    //];
-    
-    let mut test_board: [[Cell; 10]; 10] = Default::default();
-    let def = Cell::new_unc(0, units.len());
-    for i in 0..100 {
-        let x = i / 10;
-        let y = i % 10;
-        test_board[x][y] = def.clone();
+    let mut vec = Vec::<usize>::new();
+    for i in 0..units.len(){
+        vec.push(i);
     }
-
-    test_board[5][5] = Cell::Collapsed(1);
-
-    for i in 0..10{
-        for j in 0..10{
-            let north = match i {
-                9 => def.clone(),
-                _ => test_board[i + 1][j].clone(),
-            };
-            let south = match i {
-                0 => def.clone(),
-                _ => test_board[i - 1][j].clone(),
-            };
-            let east = match j {
-                9 => def.clone(),
-                _ => test_board[i][j + 1].clone(),
-            };
-            let west = match j {
-                0 => def.clone(),
-                _ => test_board[i][j - 1].clone(),
-            };
-            let cell = &mut test_board[i][j];
-            cell.collapse(&north, &south, &east, &west, &units);
-            //if cell.size() != 7 {
-            //    cell.force_collapse();
-            //}
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or(Duration::from_secs(0)).as_millis();
+    let mut test_board = FiniteMap::<Tborder>::new(10, 10, vec, units, now as u64);
+    let symbols: [&str; 7]= ["  ", "--", "##", "-|", "|-", "#|", "|#"];
+    test_board.determine();
+    println!("|----------------------|");
+    for __j in 0..test_board.height{
+        print!("| ");
+        for i in 0..test_board.width{
+            let j = test_board.height - (__j + 1);
+            let data = symbols[test_board.map[i][j].uncollapse()[0]];
+            print!("{}", data);
         }
+        println!(" |");
     }
-
-    for __i in 0..10{
-        for j in 0..10{
-            let i = 9 - __i;
-            match &test_board[i][j]{
-                Cell::Collapsed(c) =>
-                    print!("{}", c),
-                Cell::Uncollapsed(u) => {
-                    print!("o");
-                }
-            }
-        }
-        println!();
-    }
+    println!("|----------------------|");
 }

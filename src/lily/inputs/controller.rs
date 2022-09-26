@@ -2,7 +2,7 @@ use std::{thread, time::Duration};
 
 use crossterm::{
     self,
-    execute,
+//    execute,
     event::{Event, KeyCode},
 };
 

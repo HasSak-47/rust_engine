@@ -7,6 +7,7 @@
 */
 
 use std::vec::Vec;
+use std::io;
 use crate::lily::generator::random::Random;
 
 type Collapsed = usize;
@@ -67,7 +68,7 @@ impl Cell {
         }
     }
 
-    fn uncollapse(&self) -> Uncollapsed{
+    pub fn uncollapse(&self) -> Uncollapsed{
         match self{
             Cell::Uncollapsed(u) => u.clone(),
             Cell::Collapsed(c) => vec![c.clone()],
@@ -79,6 +80,10 @@ impl Cell {
             Cell::Collapsed(_) => true,
             Cell::Uncollapsed(_) => false,
         }
+    }
+
+    fn is_collapsed_mut(&mut self) -> bool{
+        self.is_collapsed()
     }
 
     fn collapsed(&self) -> Option<Collapsed> {
@@ -97,6 +102,8 @@ impl Cell {
             Cell::Collapsed(_) => return,
             Cell::Uncollapsed(_) => {},
         }
+        // check if all borders have a bit of definition
+
         let collapse = north.is_collapsed() && south.is_collapsed() && east.is_collapsed() && west.is_collapsed();
         // all the borders are defined so write what it expects
         if collapse {
@@ -171,5 +178,181 @@ impl Cell {
         };
 
         self.clone_from(&Cell::Collapsed(coll));
+    }
+
+    pub fn force_collapse_s(&mut self, seed: &u64){
+        let coll = match self {
+            Cell::Collapsed(_) => return,
+            Cell::Uncollapsed(u) => u[usize::rands_range(&0, &u.len(), seed)],
+        };
+
+        self.clone_from(&Cell::Collapsed(coll));
+    }
+}
+
+pub struct FiniteMap<BorderT: Copy + Eq + PartialEq>{
+    pub width: usize,
+    pub height: usize,
+    pub default: Uncollapsed,
+    pub defcell: Cell,
+    pub possible: Possible<BorderT>,
+    pub map: Vec<Vec<Cell>>,
+    pub seed: u64,
+}
+
+impl<BorderT: Copy + Eq + PartialEq + Default>  FiniteMap<BorderT>{
+    pub fn new(width: usize, height: usize, default: Uncollapsed, possible: Possible<BorderT>, seed: u64,) -> FiniteMap<BorderT>{
+        let mut map: Vec<Vec<Cell>> = Vec::<Vec<Cell>>::new();
+        let mut default_vec: Vec::<Cell> = Vec::<Cell>::new();
+        default_vec.resize(height, Cell::Uncollapsed(default.clone()));
+        map.resize(width, default_vec); 
+
+        FiniteMap{
+            width,
+            height,
+            default: default.clone(),
+            defcell : Cell::Uncollapsed(default),
+            possible,
+            map,
+            seed,
+        }
+    }
+
+    pub fn collapse_cell(&mut self, i: usize, j: usize) -> bool{
+        let imax = self.width - 1;
+        let jmax = self.height - 1;
+
+        let east = match i {
+            p if p >= imax => &self.defcell,
+            _ => &self.map[i + 1][j],
+        };
+        let west = match i {
+            0 => &self.defcell,
+            _ => &self.map[i - 1][j],
+        };
+        let north = match j {
+            p if p >= jmax => &self.defcell,
+            _ => &self.map[i][j + 1],
+        };
+        let south = match j {
+            0 => &self.defcell,
+            _ => &self.map[i][j - 1],
+        };
+
+        //checks if all the neightbors have some degree of determination
+        let size = self.possible.len();
+        if north.size() == size && south.size() == size && east.size() == size && west.size() == size {
+            return false;
+        }
+        else{
+            // wacky shit bc I still don't understand the 
+            // borrow checker lmao
+            let mut cell = self.map[i][j].clone();
+            cell.collapse(north, south, east, west, &self.possible);
+            self.map[i][j].clone_from(&cell);
+            return true;
+        }
+    }
+
+    fn collapse_wneightbors(&mut self, i: usize, j: usize) {
+        self.collapse_cell(i, j);
+        if i < self.width - 1 {
+            self.collapse_cell(i + 1, j);
+        }
+        if i > 1 {
+            self.collapse_cell(i - 1, j);
+        }
+        if j < self.height - 1 {
+            self.collapse_cell(i, j + 1);
+        }
+        if j > 1{
+            self.collapse_cell(i, j - 1);
+        }
+    }
+
+    fn collapse_whole(&mut self){
+        for i in 0..self.width{
+            for j in 0..self.height{
+                self.collapse_cell(i, j);
+            }
+        }
+    }
+
+    fn brute_collapse(&mut self){
+        self.collapse_whole();
+        self.collapse_whole();
+        let det = self.least();
+        if det.len() != 0{
+            let rand = det[usize::rands_range(&0, &det.len(), &self.seed)];
+            let i = rand[0];
+            let j = rand[1];
+            self.collapse_wneightbors(rand[0], rand[1]);
+            self.map[i][j].force_collapse_s(&((i ^ j) as u64));
+            self.brute_collapse();
+        }
+        for i in 0..self.width{
+            for j in 0..self.height{
+                self.collapse_cell(i, j);
+            }
+        }
+    }
+
+    pub fn print_self(&self){
+        for __j in 0..self.height{
+            for i in 0..self.width{
+                let j = (self.width - 1) - __j;
+                match &self.map[i][j] {
+                    Cell::Collapsed(c) => print!("|{}", c),
+                    Cell::Uncollapsed(u) => print!("[{}", u.len()),
+                }
+            }
+            println!();
+        }
+    } 
+
+    pub fn smart_collapse(&mut self, i: usize, j: usize){
+        self.collapse_wneightbors(i, j);
+        if i < self.width - 1{
+            if self.map[i + 1][j].size() == 1{
+                self.smart_collapse(i + 1, j)
+            }
+        }
+        if i > 0{
+            if self.map[i - 1][j].size() == 1{
+                self.smart_collapse(i - 1, j)
+            }
+        }
+    }
+
+    pub fn determine(&mut self) {
+        let ci = usize::rands_range(&0, &self.width, &self.seed);
+        let cj = usize::rands_range(&0, &self.height, &self.seed);
+
+        self.map[ci ][cj].force_collapse();
+        self.collapse_wneightbors(ci, cj);
+        self.brute_collapse();
+    }
+
+    pub fn least(&self) -> Vec::<[usize; 2]> {
+        let mut vec = Vec::<[usize; 2]>::new();
+
+        let mut min_grade = self.possible.len();
+        for i in 0..self.width{
+            for j in 0..self.height{
+                let grade = self.map[i][j].size();
+                if min_grade > grade && grade > 1{
+                    min_grade = grade;
+                    vec.clear();
+                }
+                if min_grade == grade{
+                    vec.push([i, j]);
+                }
+            }
+        }
+
+        if min_grade == self.possible.len(){
+            vec.clear();
+        }
+        return vec;
     }
 }
