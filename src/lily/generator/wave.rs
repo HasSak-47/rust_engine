@@ -122,7 +122,7 @@ impl Cell {
                 }
                 i += 1;
             }
-            // it failed what now
+            // it failed what now?
             // i dont' know
             return;
         }
@@ -200,6 +200,11 @@ pub struct FiniteMap<BorderT: Copy + Eq + PartialEq>{
     pub seed: u64,
 }
 
+pub struct LeastContainer{
+    pub vec: Vec::<[usize; 2]>,
+    pub grade: usize,
+}
+
 impl<BorderT: Copy + Eq + PartialEq + Default>  FiniteMap<BorderT>{
     pub fn new(width: usize, height: usize, default: Uncollapsed, possible: Possible<BorderT>, seed: u64,) -> FiniteMap<BorderT>{
         let mut map: Vec<Vec<Cell>> = Vec::<Vec<Cell>>::new();
@@ -250,50 +255,7 @@ impl<BorderT: Copy + Eq + PartialEq + Default>  FiniteMap<BorderT>{
             let mut cell = self.map[i][j].clone();
             cell.collapse(north, south, east, west, &self.possible);
             self.map[i][j].clone_from(&cell);
-            return true;
-        }
-    }
-
-    fn collapse_wneightbors(&mut self, i: usize, j: usize) {
-        self.collapse_cell(i, j);
-        if i < self.width - 1 {
-            self.collapse_cell(i + 1, j);
-        }
-        if i > 1 {
-            self.collapse_cell(i - 1, j);
-        }
-        if j < self.height - 1 {
-            self.collapse_cell(i, j + 1);
-        }
-        if j > 1{
-            self.collapse_cell(i, j - 1);
-        }
-    }
-
-    fn collapse_whole(&mut self){
-        for i in 0..self.width{
-            for j in 0..self.height{
-                self.collapse_cell(i, j);
-            }
-        }
-    }
-
-    fn brute_collapse(&mut self){
-        self.collapse_whole();
-        self.collapse_whole();
-        let det = self.least();
-        if det.len() != 0{
-            let rand = det[usize::rands_range(&0, &det.len(), &self.seed)];
-            let i = rand[0];
-            let j = rand[1];
-            self.collapse_wneightbors(rand[0], rand[1]);
-            self.map[i][j].force_collapse_s(&((i ^ j) as u64));
-            self.brute_collapse();
-        }
-        for i in 0..self.width{
-            for j in 0..self.height{
-                self.collapse_cell(i, j);
-            }
+            return self.map[i][j].size() != self.possible.len();
         }
     }
 
@@ -308,18 +270,40 @@ impl<BorderT: Copy + Eq + PartialEq + Default>  FiniteMap<BorderT>{
             }
             println!();
         }
+        println!();
     } 
 
-    pub fn smart_collapse(&mut self, i: usize, j: usize){
-        self.collapse_wneightbors(i, j);
-        if i < self.width - 1{
-            if self.map[i + 1][j].size() == 1{
-                self.smart_collapse(i + 1, j)
-            }
+    pub fn cirular_collapse(&mut self, i: usize, j: usize){
+        let max = if self.height > self.width {
+            self.height
         }
-        if i > 0{
-            if self.map[i - 1][j].size() == 1{
-                self.smart_collapse(i - 1, j)
+        else{
+            self.width
+        };
+        for r in 1..max{
+            let xmax = match i {
+                m if m + r >= self.width => self.width,
+                _ => i + r,
+            };
+            let xmin = match i {
+                m if m < r => 0,
+                _ => i - r,
+            };
+            let ymax = match j {
+                m if m + r >= self.height => self.height,
+                _ => j + r,
+            };
+            let ymin = match j {
+                m if m < r => 0,
+                _ => j - r,
+            };
+
+            for x in xmin..xmax {
+                self.collapse_cell(x, j);
+            }
+
+            for y in ymin..ymax{
+                self.collapse_cell(i, y);
             }
         }
     }
@@ -328,12 +312,22 @@ impl<BorderT: Copy + Eq + PartialEq + Default>  FiniteMap<BorderT>{
         let ci = usize::rands_range(&0, &self.width, &self.seed);
         let cj = usize::rands_range(&0, &self.height, &self.seed);
 
-        self.map[ci ][cj].force_collapse();
-        self.collapse_wneightbors(ci, cj);
-        self.brute_collapse();
+        self.map[ci][cj].force_collapse();
+        self.cirular_collapse(ci, cj);
+        loop {
+            let v = self.least();
+            if v.vec.len() == 0{
+                break;
+            }
+            for pt in &v.vec{
+                self.cirular_collapse(pt[0], pt[1]);
+            }
+            self.map[v.vec[0][0]][v.vec[0][1]].force_collapse_s(&(v.vec.len() as u64));
+            self.cirular_collapse(v.vec[0][0], v.vec[0][1]);
+        }
     }
 
-    pub fn least(&self) -> Vec::<[usize; 2]> {
+    pub fn least(&self) -> LeastContainer {
         let mut vec = Vec::<[usize; 2]>::new();
 
         let mut min_grade = self.possible.len();
@@ -353,6 +347,6 @@ impl<BorderT: Copy + Eq + PartialEq + Default>  FiniteMap<BorderT>{
         if min_grade == self.possible.len(){
             vec.clear();
         }
-        return vec;
+        return LeastContainer {vec, grade: min_grade};
     }
 }
