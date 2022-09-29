@@ -101,11 +101,11 @@ fn main(){
     for i in 0..units.len(){
         vec.push(i);
     }
-    //for _ in 0..10{
-    //let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or(Duration::from_secs(0)).as_millis();
-    let now = 1664386783379i128;
+    for _ in 0..10{
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or(Duration::from_secs(0)).as_millis();
+    //let now = 1664386783379i128;
     println!("{}", now);
-    let mut test_board = FiniteMap::<Tborder>::new(10, 10, vec.clone(), units.clone(), now as u64);
+    let mut test_board = FiniteMap::<Tborder>::new(50, 50, vec.clone(), units.clone(), now as u64);
     let symbols = [
             "  ", "--", "##", "-|",
             "|-", "#|", "|#", "#L",
@@ -125,5 +125,5 @@ fn main(){
         println!(" |");
     }
     println!("|----------------------|\n");
-    //}
+    }
 }

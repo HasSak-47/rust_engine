@@ -322,7 +322,8 @@ impl<BorderT: Copy + Eq + PartialEq + Default>  FiniteMap<BorderT>{
             for pt in &v.vec{
                 self.cirular_collapse(pt[0], pt[1]);
             }
-            self.map[v.vec[0][0]][v.vec[0][1]].force_collapse_s(&(v.vec.len() as u64));
+            let cp = v.vec[usize::rand_range(&0, &v.vec.len())];
+            self.map[cp[0]][cp[1]].force_collapse_s(&((cp[0] ^ cp[1]) as u64));
             self.cirular_collapse(v.vec[0][0], v.vec[0][1]);
         }
     }
