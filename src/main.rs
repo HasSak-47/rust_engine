@@ -1,12 +1,13 @@
-#[allow(dead_code, unused_imports)]
 mod lily;
 
-use lily::generator::wave::FiniteMap;
-use crate::lily::generator::wave::Unit;
+use crossterm::event::PushKeyboardEnhancementFlags;
+use lily::generator::wave::*;
+use lily::generator::random::*;
+use lily::general::*;
 use std::time::{UNIX_EPOCH, SystemTime, Duration};
+use std::fmt;
 
-
- #[derive(Copy, Clone, Eq, PartialEq,Default)]
+ #[derive(Copy, Clone, Eq, PartialEq, Default)]
  enum Tborder{
      Rig = 0b01,
      Lef = 0b10,
@@ -15,115 +16,121 @@ use std::time::{UNIX_EPOCH, SystemTime, Duration};
      Non = 0b00,
  }
 
-// to analyze the side it has to be like this
-//   a b
-// a|--|a
-// b|__|b
-//  a b
+impl Mirror for Tborder{
+    fn mirror(&self) -> Self {
+        match self {
+            Tborder::Rig => Tborder::Lef,
+            Tborder::Lef => Tborder::Rig,
+            Tborder::Tot => Tborder::Tot,
+            Tborder::Non => Tborder::Non,
+        }
+    }
+}
 
-// #[derive(Copy, Clone, Eq, PartialEq, Default)]
-// enum Border{
-//     // red stuff
-//     TotRed = 0111,
-//     LefRed = 0110,
-//     RigRed = 0011,
-// 
-//     // grey stuff
-//     GreyCn = 0010,
-// 
-//     // empty stuff
-//     #[default]
-//     Empty  = 0000,
-// }
-
-
-type Tunit = Unit<Tborder>;
+fn fmt(a: &Tborder) -> &str {
+    match a{
+        Tborder::Non => "0b00",
+        Tborder::Rig => "0b01",
+        Tborder::Lef => "0b10",
+        Tborder::Tot => "0b11",
+    }
+}
 
 fn main(){
-    let units = vec![
-        Tunit::new( // air
-            Tborder::Non,
-            Tborder::Non,
-            Tborder::Non,
-            Tborder::Non,
-        ),
-        Tunit::new( // ground
-            Tborder::Non,
-            Tborder::Tot,
-            Tborder::Rig,
-            Tborder::Rig,
-        ),
-        Tunit::new( // solid
-            Tborder::Tot,
-            Tborder::Tot,
-            Tborder::Tot,
-            Tborder::Tot,
-        ),
-        Tunit::new( // left dropoff the solid is in the left
-            Tborder::Non,
-            Tborder::Rig,
-            Tborder::Non,
-            Tborder::Rig,
-        ),
-        Tunit::new( // right dropoff
-            Tborder::Non,
-            Tborder::Lef,
-            Tborder::Rig,
-            Tborder::Non,
-        ),
-        Tunit::new( // left cliff
-            Tborder::Rig,
-            Tborder::Rig,
-            Tborder::Non,
-            Tborder::Tot,
-        ),
-        Tunit::new( // right cliff
-            Tborder::Lef,
-            Tborder::Lef,
-            Tborder::Tot,
-            Tborder::Non,
-        ),
-        Tunit::new( // left union
-            Tborder::Rig,
-            Tborder::Tot,
-            Tborder::Rig,
-            Tborder::Tot,
-        ),
-        Tunit::new( // right union
-            Tborder::Lef,
-            Tborder::Tot,
-            Tborder::Tot,
-            Tborder::Rig,
-        ),
+    let mut units = vec![
+        Unit { // air
+            north: Tborder::Non,
+            south: Tborder::Non, //
+            east:  Tborder::Non, //
+            west:  Tborder::Non,
+        },
+        Unit { // surface
+            north: Tborder::Non,
+            south: Tborder::Tot, // __ 
+            east:  Tborder::Rig, // ##
+            west:  Tborder::Lef,
+        },
+        Unit { // ground
+            north: Tborder::Tot,
+            south: Tborder::Tot, // ## 
+            east:  Tborder::Tot, // ## 
+            west:  Tborder::Tot,
+        },
+        Unit { //edge
+            north: Tborder::Non,
+            south: Tborder::Lef, //  -
+            east:  Tborder::Rig, // |#
+            west:  Tborder::Non,
+        },
     ];
 
-    let mut vec = Vec::<usize>::new();
-    for i in 0..units.len(){
-        vec.push(i);
-    }
-    for _ in 0..10{
-    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or(Duration::from_secs(0)).as_millis();
-    //let now = 1664386783379i128;
-    println!("{}", now);
-    let mut test_board = FiniteMap::<Tborder>::new(50, 50, vec.clone(), units.clone(), now as u64);
+    
+    units.push(units[1].rotate(1));
+    units.push(units[1].rotate(2));
+    units.push(units[1].rotate(3));
+    units.push(units[3].rotate(1));
+    units.push(units[3].rotate(2));
+    units.push(units[3].rotate(3));
     let symbols = [
-            "  ", "--", "##", "-|",
-            "|-", "#|", "|#", "#L",
-            "l#", "d ", "u ", "l ",
-            "R ", "D ", "u ", "L ",
-            "  ",
+        ["  ",
+         "  "], // 0
+        ["--",
+         "##"], // 1
+        ["##",
+         "##"], // 2
+        ["|-",
+         "|#"], // 3
+
+        ["|#",
+         "|#"], // 4
+        ["##",
+         "--"], // 5
+        ["#|",
+         "#|"], // 6
+        ["|#",
+         "|-"], // 7
+        ["#|",
+         "-|"], // 8
+        ["-|",
+         "#|"], // 9
     ];
-    test_board.determine();
-    println!("|----------------------|");
-    for __j in 0..test_board.height{
-        print!("| ");
-        for i in 0..test_board.width{
-            let j = test_board.height - (__j + 1);
-            let data =test_board.map[i][j].uncollapse()[0];
-            print!("{}", symbols[data]);
+
+    for unit in &units{
+        println!("{}", fmt(&unit.north));
+        println!("{}", fmt(&unit.south));
+        println!("{}", fmt(&unit.east ));
+        println!("{}\n", fmt(&unit.west ));
+    }
+    
+    //let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or(Duration::from_secs(0)).as_millis() as u64;
+    let now = 1664905806579;
+    println!("{}", now);
+
+    for i in 0..2{
+        for j in 0..(&units.len()).clone(){
+            print!("1 {} 1", symbols[j][i]);
         }
-        println!(" |");
+        println!();
     }
-    println!("|----------------------|\n");
+
+    let mut test_board = FiniteMap::<Tborder>::new(
+        10,
+        10,
+        units,
+        now,
+    );
+
+    test_board.determine();
+    test_board.print_self();
+
+    for __y in 0..test_board.height{
+        let y = test_board.height - (__y + 1);
+        for i in 0..=1 {
+            for x in 0..test_board.width{
+                print!("{}", symbols[test_board.map[x][y].collapse_val()][i]);
+            }
+            println!();
+        }
     }
+    test_board.print_self();
 }
