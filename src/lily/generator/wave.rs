@@ -1,26 +1,120 @@
 /*
-* board: Has a collection of cells
+* a board has a vector 2d of cells that can be in two states a collapsed one where 
+* it holds a usize a uncollapsed one that holds vector of usizes, the usizes are the
+* index of a vector that contains all possible values that the cell could be,
+* the vector is owned by the board it also holds the size of
+* the units just to no make it annoying to retrive
+*
 * a cell can be in two states: 
 * - collapsed: where the cell contains the index of the unit that is like
 * - uncollapsed: where the cell contains all the possible units that it can be
 * a unit has 4 borders that can have n amounts of states
+*
+* units are like this
+*
+*     a b 
+*   |-----|
+* b |     | a
+* a |     | b
+*   |-----|
+*     b a 
+*
+* for example
+*
+* lets say there is 4 types of borders of 2 bits long
+*     ab
+* AIR 00 where there is only air
+* RIG 01 where there is only solid in the right
+* LEF 10 where there is only solid in the left
+* SOL 11 where there is only solid
+*
+* a fully air unit would be like
+* n = AIR, s = RIG, w = AIR, e = AIR
+*
+* a surface unit would be
+* n = AIR, s = SOL, w = LEF, e = RIG
+*
+* a border of two surface uints are 
+*
+*     0 0       0 1
+*   |-----|   |-----|
+* 0 | uni | 0 | uni | 0
+* 1 |  1  | 1 |  2  | 1
+*   |-----|   |-----|
+*     1 1       1 1
+*
+* for uni_1 it's east is 01 
+* for uni_2 its' west is 10
+*
+* and to evaluate that they share a border you need to
+* "mirror" the value of one two make them match and then being
+* able to say "yes this two match"
+*
+* the idea of that each border has to be 2 bits is just 
+* a easy representation of how they should be paired
+*
+*
+* the border always must have an "mirror" border 
+*
+*
 */
 
-use std::vec::Vec;
-use std::io;
+use std::cmp::min_by;
+
 use crate::lily::generator::random::Random;
+use crate::lily::general::{xdia, ydia};
 
-type Collapsed = usize;
+pub trait Mirror{
+    fn mirror(&self) -> Self;
+}
 
-type Uncollapsed = Vec<usize>;
-
-#[derive(Eq, PartialEq, Clone, Copy)]
-pub struct Unit<T: Eq + PartialEq + Copy + Clone>{
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub struct Unit<T: Default + Eq + PartialEq + Copy + Clone + Mirror>{
     pub north: T,
     pub south: T,
-    pub east : T,
-    pub west : T,
+    pub east:  T,
+    pub west:  T,
 }
+
+type Possible<T> = Vec<Unit<T>>;
+
+impl<T: Default + Eq + PartialEq + Copy + Clone + Mirror> Unit<T>{
+    pub const fn new(north: T, south: T, east: T, west: T) -> Unit<T>{
+        Unit{north, south, east, west}
+    }
+
+    pub const fn rotate(&self, mut degree: usize) -> Unit<T>{
+        degree %= 4;
+        match degree{
+            1 => {Unit::<T>::new(self.east , self.west , self.south, self.north)},
+            2 => {Unit::<T>::new(self.south, self.north, self.west , self.east )},
+            3 => {Unit::<T>::new(self.west , self.east , self.north, self.south)},
+            _ => {Unit::<T>::new(self.north, self.south, self.east , self.west )},
+        }
+    }
+
+    pub fn ymirror(&self) -> Unit<T>{
+        Unit::<T>::new(self.north.mirror(), self.south.mirror(), self.west , self.east )
+    }
+
+    pub fn xmirror(&self) -> Unit<T>{
+        Unit::<T>::new(self.south, self.north, self.west.mirror() , self.east.mirror() )
+    }
+}
+
+impl<T: Default + Eq + PartialEq + Copy + Clone + Mirror> Default for Unit<T>{
+    fn default() -> Unit<T> {
+        Unit{
+            north:  T::default(),
+            south:  T::default(),
+            east :  T::default(),
+            west :  T::default(),
+        }
+    }
+}
+
+type Collapsed = usize;
+type Uncollapsed = Vec<usize>;
 
 #[derive(Clone)]
 pub enum Cell{
@@ -28,159 +122,121 @@ pub enum Cell{
     Uncollapsed(Uncollapsed),
 }
 
-#[derive(Eq, PartialEq)]
-struct Unknow{
-    pub north: Uncollapsed,
-    pub south: Uncollapsed,
-    pub east : Uncollapsed,
-    pub west : Uncollapsed,
+macro_rules! compare_borders {
+    ($possible: tt, $pos: tt, $found: tt, $borderA: tt, $borderB: tt) => {
+        $found = false;
+        for v in $borderA.uncollapse(){
+            if $possible[$pos].$borderA == $possible[v].$borderB.mirror(){
+                $found = true;
+                break;
+            }
+        }
+        if !$found {continue;}
+        
+    };
 }
 
-type Possible<T> = Vec<Unit<T>>;
-
-impl<T: Eq + PartialEq + Copy> Unit<T>{
-    pub const fn new(north: T, south: T, east: T, west: T) -> Unit<T>{
-        Unit::<T>{north, south, west, east}
-    }
-}
-
-impl Default for Cell{
-    fn default() -> Self {
-        Cell::Collapsed(0)
-    }
-}
-
-impl Cell {
-    pub fn new_unc(min: usize, max: usize) -> Cell{
-        //idk how to do this lmao
-        let mut v = Vec::<usize>::new();
-        for i in min..max {
-            v.push( i); 
-        }
-    
-        Cell::Uncollapsed(v)
-    }
-    
-    pub fn size(&self) -> usize {
-        match self{
-            Cell::Collapsed(_) => 1,
-            Cell::Uncollapsed(u) => u.len(),
-        }
-    }
-
-    pub fn uncollapse(&self) -> Uncollapsed{
-        match self{
-            Cell::Uncollapsed(u) => u.clone(),
-            Cell::Collapsed(c) => vec![c.clone()],
-        }
-    } 
-
-    fn is_collapsed(&self) -> bool{
+impl Cell{
+    /*
+    * when it is 1 the cell is collapsed
+    * when it is different from one the cell in undetermined
+    * and the value is all the possible states that it has
+    */
+    pub fn entropy(&self) -> usize{
         match self {
-            Cell::Collapsed(_) => true,
-            Cell::Uncollapsed(_) => false,
+            Cell::Collapsed(_) => 1,
+            /*
+            * this part should really collapse the cell if the vector only holds
+            * one value, but I don't think that will ever happen
+            * so I don't care
+            */
+            Cell::Uncollapsed(v) => v.len(),
+            
         }
     }
 
-    fn is_collapsed_mut(&mut self) -> bool{
-        self.is_collapsed()
+    pub fn collapsed(&self) -> bool{
+        matches!(&self, Cell::Collapsed(_))
     }
 
-    fn collapsed(&self) -> Option<Collapsed> {
-        match self{
-            Cell::Uncollapsed(_) => None,
-            Cell::Collapsed(col) => Some(col.clone()),
+    /*
+    * this function should be only used once you
+    * verified the state of the cell
+    */
+    pub fn collapse_val(&self) -> usize{
+        match &self {
+            Cell::Collapsed(ind) => ind.clone(),
+            _ => 0
         }
     }
 
-    pub fn collapse<BorderT : Eq + PartialEq + Copy>(
+    fn uncollapse(&self) -> Vec<usize>{
+        match self {
+            Self::Uncollapsed(u) => u.clone(), 
+            Self::Collapsed(c) => vec![c.clone()],
+        }
+    }
+
+    /* this is going to have a long ass documentation lmao
+    *
+    * it takes as it's inputs the bordering cells,
+    * if there is no bordering cell it should take a default cell
+    * all the possible cells it can be
+    * and returns its entropy
+    */
+
+    fn collapse<BorderT: Eq + PartialEq + Copy + Default + Mirror>(
         &mut self,
         north: &Cell, south: &Cell, east: &Cell, west: &Cell,
         possible: &Possible<BorderT>
-    ){
-        match self{
-            Cell::Collapsed(_) => return,
-            Cell::Uncollapsed(_) => {},
+    ) -> usize
+    {
+        if self.collapsed(){
+            return 1;
         }
-        // check if all borders have a bit of definition
+        let should_collapse = north.collapsed() && south.collapsed() && east.collapsed() && west.collapsed();
 
-        let collapse = north.is_collapsed() && south.is_collapsed() && east.is_collapsed() && west.is_collapsed();
-        // all the borders are defined so write what it expects
-        if collapse {
-            let expected = Unit::<BorderT> {
-                 north: possible[north.collapsed().unwrap_or(0 as usize)].south,
-                 south: possible[south.collapsed().unwrap_or(0 as usize)].north,
-                 east : possible[ east.collapsed().unwrap_or(0 as usize)].west ,
-                 west : possible[ west.collapsed().unwrap_or(0 as usize)].east ,
-            };
-            let mut i = 0 as usize;
-            //search for the border
-            for poss in possible{
-                if &expected == poss{
-                    self.clone_from(&Cell::Collapsed(i));
-                    return;
-                }
-                i += 1;
-            }
-            // it failed what now?
-            // i dont' know
-            return;
-        }
-        let mut new_self = Uncollapsed::new();
-        for u in self.uncollapse(){
-            let mut found = false;
-            for n in north.uncollapse(){
-                if possible[n].south == possible[u].north{
-                    found = true;
-                    break;
-                }
-            }
-            if !found {continue;}
-            found = false;
-            for s in south.uncollapse(){
-                if possible[s].north == possible[u].south{
-                    found = true;
-                    break;
-                }
-            }
-            if !found {continue;}
-            found = false;
-            for e in east.uncollapse(){
-                if possible[e].west == possible[u].east{
-                    found = true;
-                    break;
-                }
-            }
-            if !found {continue;}
-            found = false;
-            for w in west.uncollapse(){
-                if possible[w].east == possible[u].west{
-                    found = true;
-                    break;
-                }
-            }
+        //should it have a single escape part idk i can't care 
+        if should_collapse {
+            let expected = Unit::new(
+                possible[north.collapse_val()].south,
+                possible[south.collapse_val()].north,
+                possible[east .collapse_val()].west ,
+                possible[west .collapse_val()].east ,
+            );
 
-            if !found {continue;}
-            new_self.push(u);
+            let mut index = 0;
+            for p in possible{
+                if &expected == p{
+                    self.clone_from(&Cell::Collapsed(index));
+                    break;
+                }
+                index += 1;
+            }
         }
-        if new_self.len() == 1{
-            self.clone_from(&Cell::Collapsed(new_self[0]));
+        else{
+            let current = self.uncollapse();
+            let mut new_self = Uncollapsed::new();
+            for pos in current{
+                let mut found: bool;
+                compare_borders!(possible, pos, found, north, south);
+                compare_borders!(possible, pos, found, south, north);
+                compare_borders!(possible, pos, found, east , west );
+                compare_borders!(possible, pos, found, west , east );
+
+                new_self.push(pos);
+            }
+            if new_self.len() == 1 {
+                self.clone_from(&Cell::Collapsed(new_self[0]));
+            }
+            else{
+                self.clone_from(&Cell::Uncollapsed(new_self));
+            }
         }
-        else if new_self.len() > 1{
-            self.clone_from(&Cell::Uncollapsed(new_self));
-        }
+        return self.entropy();
     }
 
-    pub fn force_collapse(&mut self){
-        let coll = match self {
-            Cell::Collapsed(_) => return,
-            Cell::Uncollapsed(u) => u[usize::rand_range(&0, &u.len())],
-        };
-
-        self.clone_from(&Cell::Collapsed(coll));
-    }
-
-    pub fn force_collapse_s(&mut self, seed: &u64){
+    pub fn force_collapse(&mut self, seed: &u64){
         let coll = match self {
             Cell::Collapsed(_) => return,
             Cell::Uncollapsed(u) => u[usize::rands_range(&0, &u.len(), seed)],
@@ -190,7 +246,7 @@ impl Cell {
     }
 }
 
-pub struct FiniteMap<BorderT: Copy + Eq + PartialEq>{
+pub struct FiniteMap<BorderT: Copy + Eq + PartialEq + Mirror + Default>{
     pub width: usize,
     pub height: usize,
     pub default: Uncollapsed,
@@ -205,10 +261,14 @@ pub struct LeastContainer{
     pub grade: usize,
 }
 
-impl<BorderT: Copy + Eq + PartialEq + Default>  FiniteMap<BorderT>{
-    pub fn new(width: usize, height: usize, default: Uncollapsed, possible: Possible<BorderT>, seed: u64,) -> FiniteMap<BorderT>{
+impl<BorderT: Copy + Eq + PartialEq + Default + Mirror>  FiniteMap<BorderT>{
+    pub fn new(width: usize, height: usize, possible: Possible<BorderT>, seed: u64,) -> FiniteMap<BorderT>{
         let mut map: Vec<Vec<Cell>> = Vec::<Vec<Cell>>::new();
         let mut default_vec: Vec::<Cell> = Vec::<Cell>::new();
+        let mut default: Vec<usize> = Vec::new();
+        for i in 0..possible.len(){
+            default.push(i);
+        }
         default_vec.resize(height, Cell::Uncollapsed(default.clone()));
         map.resize(width, default_vec); 
 
@@ -245,8 +305,8 @@ impl<BorderT: Copy + Eq + PartialEq + Default>  FiniteMap<BorderT>{
         };
 
         //checks if all the neightbors have some degree of determination
-        let size = self.possible.len();
-        if north.size() == size && south.size() == size && east.size() == size && west.size() == size {
+        let entropy = self.possible.len();
+        if north.entropy() == entropy && south.entropy() == entropy && east.entropy() == entropy && west.entropy() == entropy {
             return false;
         }
         else{
@@ -255,17 +315,24 @@ impl<BorderT: Copy + Eq + PartialEq + Default>  FiniteMap<BorderT>{
             let mut cell = self.map[i][j].clone();
             cell.collapse(north, south, east, west, &self.possible);
             self.map[i][j].clone_from(&cell);
-            return self.map[i][j].size() != self.possible.len();
+            return self.map[i][j].entropy() != self.possible.len();
         }
     }
 
     pub fn print_self(&self){
         for __j in 0..self.height{
+            let j = (self.width - 1) - __j;
+            print!("{}: ", j);
             for i in 0..self.width{
-                let j = (self.width - 1) - __j;
                 match &self.map[i][j] {
                     Cell::Collapsed(c) => print!("|{}", c),
-                    Cell::Uncollapsed(u) => print!("[{}", u.len()),
+                    Cell::Uncollapsed(u) => {
+                        print!("[{}", u.len());
+                        //for i in u{
+                        //    print!("{},", i);
+                        //}
+                        //print!("");
+                    }
                 }
             }
             println!();
@@ -274,57 +341,39 @@ impl<BorderT: Copy + Eq + PartialEq + Default>  FiniteMap<BorderT>{
     } 
 
     pub fn cirular_collapse(&mut self, i: usize, j: usize){
-        let max = if self.height > self.width {
-            self.height
-        }
-        else{
-            self.width
-        };
-        for r in 1..max{
-            let xmax = match i {
-                m if m + r >= self.width => self.width,
-                _ => i + r,
-            };
-            let xmin = match i {
-                m if m < r => 0,
-                _ => i - r,
-            };
-            let ymax = match j {
-                m if m + r >= self.height => self.height,
-                _ => j + r,
-            };
-            let ymin = match j {
-                m if m < r => 0,
-                _ => j - r,
-            };
+        for r in 0..=(self.width + self.height){
+            for step in 1..= 4 * r{
+                let ni = i as i64 + xdia(step as u64, r as u64);
+                let nj = j as i64 + ydia(step as u64, r as u64);
 
-            for x in xmin..xmax {
-                self.collapse_cell(x, j);
-            }
-
-            for y in ymin..ymax{
-                self.collapse_cell(i, y);
+                if ni < 0 || ni >= self.width as i64 || nj < 0 || nj >= self.height as i64 {
+                    continue;
+                }
             }
         }
     }
 
-    pub fn determine(&mut self) {
-        let ci = usize::rands_range(&0, &self.width, &self.seed);
-        let cj = usize::rands_range(&0, &self.height, &self.seed);
+    pub fn force_collapse(&mut self, i: usize, j: usize){
+        let seed = self.seed + (i ^ j) as u64;
+        self.map[i][j].force_collapse(&seed);
+    }
 
-        self.map[ci][cj].force_collapse();
+    pub fn determine(&mut self) {
+        let ci = usize::rands_range(&0, &self.width,  &self.seed);
+        let cj = usize::rands_range(&0, &self.height, &(self.seed + ci as u64));
+
+        self.force_collapse(ci, cj);
         self.cirular_collapse(ci, cj);
+
         loop {
+            let mut buf = String::new();
             let v = self.least();
             if v.vec.len() == 0{
                 break;
             }
-            for pt in &v.vec{
-                self.cirular_collapse(pt[0], pt[1]);
-            }
             let cp = v.vec[usize::rand_range(&0, &v.vec.len())];
-            self.map[cp[0]][cp[1]].force_collapse_s(&((cp[0] ^ cp[1]) as u64));
-            self.cirular_collapse(v.vec[0][0], v.vec[0][1]);
+            self.force_collapse(cp[0], cp[1]);
+            self.cirular_collapse(cp[0], cp[1]);
         }
     }
 
@@ -334,7 +383,7 @@ impl<BorderT: Copy + Eq + PartialEq + Default>  FiniteMap<BorderT>{
         let mut min_grade = self.possible.len();
         for i in 0..self.width{
             for j in 0..self.height{
-                let grade = self.map[i][j].size();
+                let grade = self.map[i][j].entropy();
                 if min_grade > grade && grade > 1{
                     min_grade = grade;
                     vec.clear();
