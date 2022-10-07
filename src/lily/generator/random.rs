@@ -3,6 +3,7 @@ use crate::lily::generator::converter::Converter;
 
 static mut RANDOM_SEED : u64 = 0;
 
+#[allow(dead_code)]
 pub fn set_global_seed(seed: &u64){
     unsafe{
         RANDOM_SEED.clone_from(seed);

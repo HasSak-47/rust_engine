@@ -59,13 +59,18 @@
 *
 */
 
-use std::cmp::min_by;
-
 use crate::lily::generator::random::Random;
 use crate::lily::general::{xdia, ydia};
 
 pub trait Mirror{
     fn mirror(&self) -> Self;
+}
+
+pub trait Transform2d{
+    fn xmirror(&self) -> Self;
+    fn ymirror(&self) -> Self;
+
+    fn rotate(&self, degree: usize) -> Self;
 }
 
 #[derive(PartialEq, Eq, Clone, Copy)]
@@ -79,10 +84,12 @@ pub struct Unit<T: Default + Eq + PartialEq + Copy + Clone + Mirror>{
 type Possible<T> = Vec<Unit<T>>;
 
 impl<T: Default + Eq + PartialEq + Copy + Clone + Mirror> Unit<T>{
+    #[allow(dead_code)]
     pub const fn new(north: T, south: T, east: T, west: T) -> Unit<T>{
         Unit{north, south, east, west}
     }
 
+    #[allow(dead_code)]
     pub const fn rotate(&self, mut degree: usize) -> Unit<T>{
         degree %= 4;
         match degree{
@@ -93,10 +100,12 @@ impl<T: Default + Eq + PartialEq + Copy + Clone + Mirror> Unit<T>{
         }
     }
 
+    #[allow(dead_code)]
     pub fn ymirror(&self) -> Unit<T>{
         Unit::<T>::new(self.north.mirror(), self.south.mirror(), self.west , self.east )
     }
 
+    #[allow(dead_code)]
     pub fn xmirror(&self) -> Unit<T>{
         Unit::<T>::new(self.south, self.north, self.west.mirror() , self.east.mirror() )
     }
@@ -142,7 +151,7 @@ impl Cell{
     * when it is different from one the cell in undetermined
     * and the value is all the possible states that it has
     */
-    pub fn entropy(&self) -> usize{
+    fn entropy(&self) -> usize{
         match self {
             Cell::Collapsed(_) => 1,
             /*
@@ -155,7 +164,7 @@ impl Cell{
         }
     }
 
-    pub fn collapsed(&self) -> bool{
+    fn collapsed(&self) -> bool{
         matches!(&self, Cell::Collapsed(_))
     }
 
@@ -319,6 +328,7 @@ impl<BorderT: Copy + Eq + PartialEq + Default + Mirror>  FiniteMap<BorderT>{
         }
     }
 
+    #[allow(dead_code)]
     pub fn print_self(&self){
         for __j in 0..self.height{
             let j = (self.width - 1) - __j;
@@ -349,6 +359,8 @@ impl<BorderT: Copy + Eq + PartialEq + Default + Mirror>  FiniteMap<BorderT>{
                 if ni < 0 || ni >= self.width as i64 || nj < 0 || nj >= self.height as i64 {
                     continue;
                 }
+
+                self.collapse_cell(ni as usize, nj as usize);
             }
         }
     }
@@ -366,7 +378,6 @@ impl<BorderT: Copy + Eq + PartialEq + Default + Mirror>  FiniteMap<BorderT>{
         self.cirular_collapse(ci, cj);
 
         loop {
-            let mut buf = String::new();
             let v = self.least();
             if v.vec.len() == 0{
                 break;

@@ -33,13 +33,13 @@ pub fn bubble_gens_3d(x: &f64, y: &f64, z: &f64, seed: &Seed64) -> f64{
     return x + y + z + 2.0 + seed.clone() as f64;
 }
 
-pub fn bubble_gen_2d(x: &f64, y: &f64) -> f64{
-    return bubble_gens_2d(x, y, &0);
-}
-
-pub fn bubble_gen_3d(x: &f64, y: &f64, z: &f64) -> f64{
-    return bubble_gens_3d(x, y, z, &0);
-}
+// pub fn bubble_gen_2d(x: &f64, y: &f64) -> f64{
+//     return bubble_gens_2d(x, y, &0);
+// }
+// 
+// pub fn bubble_gen_3d(x: &f64, y: &f64, z: &f64) -> f64{
+//     return bubble_gens_3d(x, y, z, &0);
+// }
 
 #[derive(Default)]
 pub struct BubbleGen2D{
