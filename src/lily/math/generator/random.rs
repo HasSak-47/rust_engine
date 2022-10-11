@@ -32,45 +32,37 @@ pub fn rand_noise() -> u64{
     return rands_noise(&prev_val);
 }
 
-pub trait Random<T: Converter<T>>{
-    fn rands(seed: &u64) -> T;
-    fn random() -> T;
-    fn rands_range(min: &T, max: &T, seed: &u64) -> T;
-    fn rand_range(min: &T, max: &T) -> T;
-
-    //takes ownership
-    fn orands(seed: u64) -> T;
-    fn orands_range(min: T, max: T, seed: u64) -> T;
-    fn orand_range(min: T, max: T) -> T;
-}
-
-impl<T: Converter<T>> Random<T> for T {
+pub trait Random<T: Converter = Self>{
     fn rands(seed: &u64) -> T {
-        return T::convert(&rands_noise(&seed));
+        T::convert(&rands_noise(&seed))
     }
 
     fn random() -> T{
-        return T::convert(&rand_noise());
+        T::convert(&rand_noise())
     }
 
     fn rands_range(min: &T, max: &T, seed: &u64) -> T{
-        return T::convert_range(min, max, &rands_noise(seed));
+        T::convert_range(min, max, &rands_noise(seed))
     }
 
     fn rand_range(min: &T, max: &T) -> T{
-        return T::convert_range(min, max, &rand_noise());
+        T::convert_range(min, max, &rand_noise())
     }
    
     //takes ownership
     fn orands(seed: u64) -> T {
-        return T::convert(&rands_noise(&seed));
+        T::convert(&rands_noise(&seed))
     }
 
     fn orands_range(min: T, max: T, seed: u64) -> T{
-        return T::convert_range(&min, &max, &rands_noise(&seed));
+        T::convert_range(&min, &max, &rands_noise(&seed))
     }
 
     fn orand_range(min: T, max: T) -> T{
-        return T::convert_range(&min, &max, &rand_noise());
+        T::convert_range(&min, &max, &rand_noise())
     }
 }
+
+impl Random for usize{}
+impl Random for u64{}
+impl Random for f64{}

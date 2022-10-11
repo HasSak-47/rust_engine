@@ -1,10 +1,10 @@
 
-pub trait Converter<T>{
-    fn convert(input: &u64) -> T;
-    fn convert_range(min: &T, max: &T, input: &u64) -> T;
+pub trait Converter{
+    fn convert(input: &u64) -> Self;
+    fn convert_range(min: &Self, max: &Self, input: &u64) -> Self;
 }
 
-impl Converter<u64> for u64{
+impl Converter for u64{
     fn convert(input: &u64) -> u64{
         return input.clone();
     }
@@ -17,7 +17,7 @@ impl Converter<u64> for u64{
 macro_rules! ConverterFloatImpl {
     ($Type: ty, $Power: literal) => {
 
-        impl Converter<$Type> for $Type{
+        impl Converter for $Type{
             fn convert(input: &u64) -> $Type{
                 let max: u64 = 1 << $Power;
                 return (input % (max + 1)) as $Type / (max as $Type);
@@ -32,7 +32,7 @@ macro_rules! ConverterFloatImpl {
 
 macro_rules! ConverterIntImpl {
     ($Type: ty) => {
-        impl Converter<$Type> for $Type{
+        impl Converter for $Type{
             fn convert(input: &u64) -> $Type{
                 return (input % (<$Type>::MAX as u64)) as $Type;
             }
@@ -55,16 +55,3 @@ ConverterIntImpl!(usize);
 ConverterIntImpl!(u32);
 ConverterIntImpl!(u16);
 ConverterIntImpl!(u8 );
-/*
-impl Converter<f32> for f32{
-    fn convert(input: &u64) -> f32{
-        let max: u64 = 4096;
-        return (input % (max + 1)) as f32 / (max as f32)
-    }
-
-    fn convert_range(min: &f32, max: &f32, input: &u64) -> f32{
-        return min +f32::convert(input) * (max - min);
-    }
-}
-*/
-

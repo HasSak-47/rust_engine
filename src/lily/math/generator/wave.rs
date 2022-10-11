@@ -47,34 +47,24 @@
 * for uni_2 its' west is 10
 *
 * and to evaluate that they share a border you need to
-* "mirror" the value of one two make them match and then being
+* get the opposite of the value of one two make them match and then being
 * able to say "yes this two match"
 *
 * the idea of that each border has to be 2 bits is just 
 * a easy representation of how they should be paired
 *
 *
-* the border always must have an "mirror" border 
+* the border always must have an opposite border 
 *
 *
 */
 
 use crate::lily::generator::random::Random;
 use crate::lily::general::{xdia, ydia};
-
-pub trait Mirror{
-    fn mirror(&self) -> Self;
-}
-
-pub trait Transform2d{
-    fn xmirror(&self) -> Self;
-    fn ymirror(&self) -> Self;
-
-    fn rotate(&self, degree: usize) -> Self;
-}
+pub use crate::lily::transform2d::{Transform2d, Opposite};
 
 #[derive(PartialEq, Eq, Clone, Copy)]
-pub struct Unit<T: Default + Eq + PartialEq + Copy + Clone + Mirror>{
+pub struct Unit<T: Default + Eq + PartialEq + Copy + Opposite>{
     pub north: T,
     pub south: T,
     pub east:  T,
@@ -83,7 +73,7 @@ pub struct Unit<T: Default + Eq + PartialEq + Copy + Clone + Mirror>{
 
 type Possible<T> = Vec<Unit<T>>;
 
-impl<T: Default + Eq + PartialEq + Copy + Clone + Mirror> Unit<T>{
+impl<T: Default + Eq + PartialEq + Copy + Opposite> Unit<T>{
     #[allow(dead_code)]
     pub const fn new(north: T, south: T, east: T, west: T) -> Unit<T>{
         Unit{north, south, east, west}
@@ -102,16 +92,16 @@ impl<T: Default + Eq + PartialEq + Copy + Clone + Mirror> Unit<T>{
 
     #[allow(dead_code)]
     pub fn ymirror(&self) -> Unit<T>{
-        Unit::<T>::new(self.north.mirror(), self.south.mirror(), self.west , self.east )
+        Unit::<T>::new(self.north.opposite(), self.south.opposite(), self.west , self.east )
     }
 
     #[allow(dead_code)]
     pub fn xmirror(&self) -> Unit<T>{
-        Unit::<T>::new(self.south, self.north, self.west.mirror() , self.east.mirror() )
+        Unit::<T>::new(self.south, self.north, self.west.opposite() , self.east.opposite() )
     }
 }
 
-impl<T: Default + Eq + PartialEq + Copy + Clone + Mirror> Default for Unit<T>{
+impl<T: Default + Eq + PartialEq + Copy + Opposite> Default for Unit<T>{
     fn default() -> Unit<T> {
         Unit{
             north:  T::default(),
@@ -135,7 +125,7 @@ macro_rules! compare_borders {
     ($possible: tt, $pos: tt, $found: tt, $borderA: tt, $borderB: tt) => {
         $found = false;
         for v in $borderA.uncollapse(){
-            if $possible[$pos].$borderA == $possible[v].$borderB.mirror(){
+            if $possible[$pos].$borderA == $possible[v].$borderB.opposite(){
                 $found = true;
                 break;
             }
@@ -194,7 +184,7 @@ impl Cell{
     * and returns its entropy
     */
 
-    fn collapse<BorderT: Eq + PartialEq + Copy + Default + Mirror>(
+    fn collapse<BorderT: Eq + PartialEq + Default + Copy + Opposite>(
         &mut self,
         north: &Cell, south: &Cell, east: &Cell, west: &Cell,
         possible: &Possible<BorderT>
@@ -236,10 +226,10 @@ impl Cell{
                 new_self.push(pos);
             }
             if new_self.len() == 1 {
-                self.clone_from(&Cell::Collapsed(new_self[0]));
+                *self = Cell::Collapsed(new_self[0]);
             }
             else{
-                self.clone_from(&Cell::Uncollapsed(new_self));
+                *self = Cell::Uncollapsed(new_self);
             }
         }
         return self.entropy();
@@ -251,11 +241,11 @@ impl Cell{
             Cell::Uncollapsed(u) => u[usize::rands_range(&0, &u.len(), seed)],
         };
 
-        self.clone_from(&Cell::Collapsed(coll));
+        *self = Cell::Collapsed(coll);
     }
 }
 
-pub struct FiniteMap<BorderT: Copy + Eq + PartialEq + Mirror + Default>{
+pub struct FiniteMap<BorderT: Default + Eq + PartialEq + Copy + Opposite>{
     pub width: usize,
     pub height: usize,
     pub default: Uncollapsed,
@@ -270,7 +260,7 @@ pub struct LeastContainer{
     pub grade: usize,
 }
 
-impl<BorderT: Copy + Eq + PartialEq + Default + Mirror>  FiniteMap<BorderT>{
+impl<BorderT: Eq + PartialEq + Default + Copy + Opposite>  FiniteMap<BorderT>{
     pub fn new(width: usize, height: usize, possible: Possible<BorderT>, seed: u64,) -> FiniteMap<BorderT>{
         let mut map: Vec<Vec<Cell>> = Vec::<Vec<Cell>>::new();
         let mut default_vec: Vec::<Cell> = Vec::<Cell>::new();
