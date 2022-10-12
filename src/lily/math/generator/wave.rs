@@ -59,9 +59,11 @@
 *
 */
 
-use crate::lily::generator::random::Random;
-use crate::lily::general::{xdia, ydia};
-pub use crate::lily::transform2d::{Transform2d, Opposite};
+use crate::lily::math::{
+    generator::random::Random,
+    general::{xdia, ydia},
+    transform2d::{Transform2d, Opposite}
+};
 
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub struct Unit<T: Default + Eq + PartialEq + Copy + Opposite>{
