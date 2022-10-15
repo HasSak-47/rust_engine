@@ -4,3 +4,4 @@ test.*
 *.bk
 *.bak
 /lib
+*test.*

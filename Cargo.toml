@@ -9,7 +9,7 @@ build   = "build.rs"
 [dependencies]
 tui = "0.19"
 crossterm = "0.25"
-cty = "0.2"
+sdl2 = "0.35"
 
 [build-dependencies]
 cc = "1.0"

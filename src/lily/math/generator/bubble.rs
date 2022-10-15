@@ -1,6 +1,5 @@
-use tui::widgets::Wrap;
 
-use crate::lily::math::generator::{
+use super::{
     base::{self, BaseGen, Seed64},
     random::*,
 };
@@ -23,6 +22,19 @@ pub fn bubble_gens_3d(x: &f64, y: &f64, z: &f64, seed: &Seed64) -> f64{
 
 pub struct BubbleGen {
     pub gen: BaseGen,
+}
+
+impl BubbleGen{
+    pub fn new() -> Self{
+        BubbleGen{
+            gen: BaseGen {
+                seed: 0,
+                x_wrap: 0,
+                y_wrap: 0,
+                z_wrap: 0,
+                min: 0.0, max: 0.0 }
+        }
+    }
 }
 
 impl base::Generator<f64, f64> for BubbleGen {

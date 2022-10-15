@@ -1,9 +1,9 @@
 #[derive(Clone)]
 #[repr(C)]
 pub struct Img{
-    pub width   : i32,
-    pub height  : i32,
-    pub channels: i32,
+    pub width   : usize,
+    pub height  : usize,
+    pub channels: usize,
 
     data: *mut u8, 
 }
@@ -17,8 +17,8 @@ pub enum ImgFmt{
 }
 
 extern "C" {
-    pub fn img_new(width: i32, height: i32, channels: i32) -> Img;
-    pub fn img_write(img: Img, fmt: ImgFmt, path: *const i8) -> cty::c_int;
+    pub fn img_new(width: usize, height: usize, channels: usize) -> Img;
+    pub fn img_write(img: Img, fmt: ImgFmt, path: *const i8) -> i32;
     pub fn img_clear(img: Img);
 }
 

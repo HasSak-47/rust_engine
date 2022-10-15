@@ -7,9 +7,9 @@
 #include <stdio.h>
 
 typedef struct img{
-	int width;
-	int height;
-	int channels;
+	size_t width;
+	size_t height;
+	size_t channels;
 
 	uint8_t* data;
 
@@ -22,7 +22,7 @@ typedef enum img_fmt{
 	QOI,
 } img_fmt;
 
-img img_new(int width, int height, int channels){
+img img_new(size_t width, size_t height, size_t channels){
 	uint8_t* data = malloc(height * width * channels);
 	if (data == NULL)
 		return (img){0, 0, 0, NULL};

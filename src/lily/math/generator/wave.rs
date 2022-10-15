@@ -55,14 +55,12 @@
 *
 *
 * the border always must have an opposite border 
-*
-*
 */
 
 use crate::lily::math::{
     generator::random::Random,
     general::{xdia, ydia},
-    transform2d::{Transform2d, Opposite}
+    transform2d::Opposite,
 };
 
 #[derive(PartialEq, Eq, Clone, Copy)]
@@ -167,7 +165,7 @@ impl Cell{
     pub fn collapse_val(&self) -> usize{
         match &self {
             Cell::Collapsed(ind) => ind.clone(),
-            _ => 0
+            _ => usize::MAX
         }
     }
 
@@ -329,11 +327,12 @@ impl<BorderT: Eq + PartialEq + Default + Copy + Opposite>  FiniteMap<BorderT>{
                 match &self.map[i][j] {
                     Cell::Collapsed(c) => print!("|{}", c),
                     Cell::Uncollapsed(u) => {
-                        print!("[{}", u.len());
-                        //for i in u{
-                        //    print!("{},", i);
-                        //}
-                        //print!("");
+                        //print!("[{}", u.len());
+                        print!("[");
+                        for i in u{
+                            print!("{},", i);
+                        }
+                        print!("");
                     }
                 }
             }
@@ -358,7 +357,7 @@ impl<BorderT: Eq + PartialEq + Default + Copy + Opposite>  FiniteMap<BorderT>{
     }
 
     pub fn force_collapse(&mut self, i: usize, j: usize){
-        let seed = self.seed + (i ^ j) as u64;
+        let seed = self.seed * (i * j) as u64;
         self.map[i][j].force_collapse(&seed);
     }
 
