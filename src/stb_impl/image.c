@@ -2,25 +2,8 @@
 #include <stb/stb_image.h>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb/stb_image_write.h>
-#include <stdint.h>
 
-#include <stdio.h>
-
-typedef struct img{
-	size_t width;
-	size_t height;
-	size_t channels;
-
-	uint8_t* data;
-
-} img;
-
-typedef enum img_fmt{
-	PNG,
-	JPG,
-	KOI,
-	QOI,
-} img_fmt;
+#include <lilith/image.h>
 
 img img_new(size_t width, size_t height, size_t channels){
 	uint8_t* data = malloc(height * width * channels);
@@ -30,7 +13,7 @@ img img_new(size_t width, size_t height, size_t channels){
 	return (img){width, height, channels, data};
 }
 
-img load(const char* filename){
+img img_load(const char* filename){
 	int width, height, channels;
 	uint8_t* data = stbi_load(filename, &width, &height, &channels, 0);
 

@@ -207,7 +207,7 @@ impl Cell{
             let mut index = 0;
             for p in possible{
                 if &expected == p{
-                    self.clone_from(&Cell::Collapsed(index));
+                    *self = Cell::Collapsed(index);
                     break;
                 }
                 index += 1;
@@ -235,10 +235,10 @@ impl Cell{
         return self.entropy();
     }
 
-    pub fn force_collapse(&mut self, seed: &u64){
+    pub fn force_collapse(&mut self, seed: u64){
         let coll = match self {
             Cell::Collapsed(_) => return,
-            Cell::Uncollapsed(u) => u[usize::rands_range(&0, &u.len(), seed)],
+            Cell::Uncollapsed(u) => u[usize::rands_range(0, u.len(), seed)],
         };
 
         *self = Cell::Collapsed(coll);
@@ -357,13 +357,13 @@ impl<BorderT: Eq + PartialEq + Default + Copy + Opposite>  FiniteMap<BorderT>{
     }
 
     pub fn force_collapse(&mut self, i: usize, j: usize){
-        let seed = self.seed * (i * j) as u64;
-        self.map[i][j].force_collapse(&seed);
+        let seed = self.seed + (i + j * self.height) as u64;
+        self.map[i][j].force_collapse(seed);
     }
 
     pub fn determine(&mut self) {
-        let ci = usize::rands_range(&0, &self.width,  &self.seed);
-        let cj = usize::rands_range(&0, &self.height, &(self.seed + ci as u64));
+        let ci = usize::rands_range(0, self.width,  self.seed);
+        let cj = usize::rands_range(0, self.height, (self.seed + ci as u64));
 
         self.force_collapse(ci, cj);
         self.cirular_collapse(ci, cj);
@@ -373,7 +373,7 @@ impl<BorderT: Eq + PartialEq + Default + Copy + Opposite>  FiniteMap<BorderT>{
             if v.vec.len() == 0{
                 break;
             }
-            let cp = v.vec[usize::rand_range(&0, &v.vec.len())];
+            let cp = v.vec[usize::rand_range(0, v.vec.len())];
             self.force_collapse(cp[0], cp[1]);
             self.cirular_collapse(cp[0], cp[1]);
         }

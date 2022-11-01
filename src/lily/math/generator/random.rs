@@ -4,13 +4,13 @@ use crate::lily::math::converter::Converter;
 static mut RANDOM_SEED : u64 = 0;
 
 #[allow(dead_code)]
-pub fn set_global_seed(seed: &u64){
+pub fn set_global_seed(seed: u64){
     unsafe{
-        RANDOM_SEED.clone_from(seed);
+        RANDOM_SEED = seed;
     }
 }
 
-pub fn rands_noise(seed: &u64) -> u64{
+pub fn rands_noise(seed: u64) -> u64{
     let mut return_val = Wrapping(seed.clone());
     return_val ^= 0xb00bad1c;
     return_val *= 0xd1c510be;
@@ -29,37 +29,37 @@ pub fn rand_noise() -> u64{
         RANDOM_SEED += 1;
     }
 
-    return rands_noise(&prev_val);
+    return rands_noise(prev_val);
 }
 
 pub trait Random<T: Converter = Self>{
-    fn rands(seed: &u64) -> T {
-        T::convert(&rands_noise(&seed))
+    fn rands(seed: u64) -> T {
+        T::convert(rands_noise(seed))
     }
 
     fn random() -> T{
-        T::convert(&rand_noise())
+        T::convert(rand_noise())
     }
 
-    fn rands_range(min: &T, max: &T, seed: &u64) -> T{
-        T::convert_range(min, max, &rands_noise(seed))
+    fn rands_range(min: T, max: T, seed: u64) -> T{
+        T::convert_range(min, max, rands_noise(seed))
     }
 
-    fn rand_range(min: &T, max: &T) -> T{
-        T::convert_range(min, max, &rand_noise())
+    fn rand_range(min: T, max: T) -> T{
+        T::convert_range(min, max, rand_noise())
     }
    
     //takes ownership
     fn orands(seed: u64) -> T {
-        T::convert(&rands_noise(&seed))
+        T::convert(rands_noise(seed))
     }
 
     fn orands_range(min: T, max: T, seed: u64) -> T{
-        T::convert_range(&min, &max, &rands_noise(&seed))
+        T::convert_range(min, max, rands_noise(seed))
     }
 
     fn orand_range(min: T, max: T) -> T{
-        T::convert_range(&min, &max, &rand_noise())
+        T::convert_range(min, max, rand_noise())
     }
 }
 

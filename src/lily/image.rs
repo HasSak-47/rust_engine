@@ -2,6 +2,7 @@ use std::ffi::CString;
 use super::bindings::c_img::*;
 pub use super::bindings::c_img::{ImgFmt, Img};
 
+#[allow(dead_code)]
 impl Img{
     pub fn new(width: usize, height: usize, channels: usize) -> Option<Img>{
 
@@ -10,7 +11,7 @@ impl Img{
         }
 
         unsafe{
-            let new_self = img_new(width, height, channels);
+            let new_self = img_new(width as usize, height as usize, channels as usize);
 
             if new_self.width == 0{
                 None
@@ -74,7 +75,7 @@ impl Img{
     pub fn get_pixel(&mut self, x: usize, y: usize) -> Vec<&mut u8>{
         let mut vec = Vec::<&mut u8>::new();
         unsafe{
-            let ptr = self.data() as usize + self.channels as usize * (x + self.height as usize * y);
+            let ptr = self.data as usize + self.channels as usize * (x + self.height as usize * y);
             for i in 0..self.channels{
                 vec.push(&mut *((ptr + i as usize) as *mut u8));
             }
@@ -86,8 +87,24 @@ impl Img{
 
     pub fn get_channel(&mut self, x: usize, y: usize, z: usize) -> &mut u8{
         unsafe{
-            let ptr = self.data() as usize + z + self.channels * (x + self.height * y);
+            let ptr = self.data as usize + z + self.channels * (x + self.height * y);
             &mut *(ptr as *mut u8)
+        }
+    }
+
+    pub fn load(path: &str) -> Option<Self>{
+        unsafe{
+            let cpath = match CString::new(path){
+                Ok(p) => p,
+                Err(_) => return None,
+            };
+            let new = img_load(cpath.as_ptr());
+            if new.width == 0{
+                None
+            }
+            else {
+                Some(new)
+            }
         }
     }
 }
