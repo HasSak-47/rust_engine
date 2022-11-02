@@ -20,7 +20,21 @@ fn cbind(path : &str, out_name: &str){
         .expect("Couldn't generate some script");
 }
 
+fn cpp_binds(){
+    println!("cargo:rerun-if-changed={}", "src/logger.cpp");
+    println!("cargo:rerun-if-changed={}", "src/main_app.cpp");
+    let mut ccpp_cm = cc::Build::new();
+    ccpp_cm.cpp(true);
+    ccpp_cm.include("include");
+    ccpp_cm
+        .file("src/logger.cpp")
+        .file("src/main_app.cpp")
+    ;
+    ccpp_cm.compile("vulkan_bings.a");
+}
+
 fn main(){
+    cbind("include/lilith/debug/logger.hpp", "logger.rs");
     /*
     let stb_bindings = bindgen::builder()
         .header("include/lilith/image.h")
@@ -42,6 +56,7 @@ fn main(){
         .file("src/stb_impl/perlin.c");
     cc_cm.compile("stb_bings.a");
 
+    cpp_binds();
 
 
     /*
