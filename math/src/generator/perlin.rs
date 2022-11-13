@@ -1,15 +1,13 @@
-use crate::lily::{
-    math::generator::base,
-    bindings::c_perlin,
-};
+use binds::c_perlin;
 
-pub use crate::lily::math::generator::base::*;
+
+pub use super::base::*;
 
 pub struct BasePerlinGen{
     pub gen: BaseGen,
 }
 
-impl base::Generator<f64, f64> for BasePerlinGen {
+impl Generator<f64, f64> for BasePerlinGen {
     fn generate_3d(&self, x: f64, y: f64, z: f64) -> f64 {
         unsafe{ c_perlin::perlin_noise_seed(
                 x as f32,
@@ -54,7 +52,7 @@ impl PerlinGen{
     }
 }
 
-impl base::Generator<f64, f64> for PerlinGen{
+impl Generator<f64, f64> for PerlinGen{
     fn generate_3d(&self, x: f64, y: f64, z: f64) -> f64 {
         let mut r = 0.0;
         for i in 0..self.iter{

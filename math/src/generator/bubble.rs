@@ -1,4 +1,3 @@
-
 use super::{
     base::{self, BaseGen, Seed64},
     random::*,
@@ -6,7 +5,7 @@ use super::{
 
 use std::num::Wrapping;
 
-pub use crate::lily::math::generator::base::Generator;
+pub use base::Generator;
 
 pub fn bubble_gens_3d(x: &f64, y: &f64, z: &f64, seed: &Seed64) -> f64{
     return x + y + z + 2.0 + seed.clone() as f64;

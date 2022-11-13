@@ -1,6 +1,6 @@
-use std::{ops::{
+use std::ops::{
     Add, Sub, Mul, Div
-}, fmt::format};
+};
 
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Quat{

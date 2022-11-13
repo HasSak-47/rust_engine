@@ -57,10 +57,12 @@
 * the border always must have an opposite border 
 */
 
-use crate::lily::math::{
-    generator::random::Random,
-    general::{xdia, ydia},
-    transform2d::Opposite,
+use {
+    super::random::Random,
+    super::super::{
+        general::{xdia, ydia},
+        transform2d::Opposite,
+    },
 };
 
 #[derive(PartialEq, Eq, Clone, Copy)]

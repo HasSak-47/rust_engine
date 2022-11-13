@@ -1,8 +1,5 @@
-mod lily;
-use ash::vk;
-
+mod utils;
+use math;
 
 fn main() {
-    unsafe{
-    }
 }

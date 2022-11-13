@@ -1,5 +1,5 @@
 use std::num::Wrapping;
-use crate::lily::math::converter::Converter;
+use super::super::converter::Converter;
 
 static mut RANDOM_SEED : u64 = 0;
 
