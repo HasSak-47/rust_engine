@@ -27,6 +27,7 @@ extern "C" {
         format: img_fmt,
         path: *const ::std::os::raw::c_char,
     ) -> ::std::os::raw::c_int;
+#[allow(dead_code)]
     pub fn img_clear(image: img);
 }
 

@@ -7,10 +7,9 @@ edition = "2021"
 members = [
 	"bindings",
 	"math",
-	"vulkan",
 ]
 
 [dependencies]
 binds  = {path = "bindings"}
 math   = {path = "math"}
-vulkan = {path = "vulkan"}
+sdl2   = "0.35"

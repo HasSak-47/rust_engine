@@ -365,7 +365,7 @@ impl<BorderT: Eq + PartialEq + Default + Copy + Opposite>  FiniteMap<BorderT>{
 
     pub fn determine(&mut self) {
         let ci = usize::rands_range(0, self.width,  self.seed);
-        let cj = usize::rands_range(0, self.height, (self.seed + ci as u64));
+        let cj = usize::rands_range(0, self.height, self.seed + ci as u64);
 
         self.force_collapse(ci, cj);
         self.cirular_collapse(ci, cj);
