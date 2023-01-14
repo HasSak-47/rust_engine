@@ -248,13 +248,13 @@ impl Cell{
 }
 
 pub struct FiniteMap<BorderT: Default + Eq + PartialEq + Copy + Opposite>{
-    pub width: usize,
-    pub height: usize,
-    pub default: Uncollapsed,
-    pub defcell: Cell,
+    pub width   : usize,
+    pub height  : usize,
+    pub default : Uncollapsed,
+    pub defcell : Cell,
     pub possible: Possible<BorderT>,
-    pub map: Vec<Vec<Cell>>,
-    pub seed: u64,
+    pub map     : Vec<Vec<Cell>>,
+    pub seed    : u64,
 }
 
 pub struct LeastContainer{

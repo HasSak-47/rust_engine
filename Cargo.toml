@@ -7,9 +7,14 @@ edition = "2021"
 members = [
 	"bindings",
 	"math",
+	"render",
 ]
 
 [dependencies]
-binds  = {path = "bindings"}
-math   = {path = "math"}
-sdl2   = "0.35"
+binds   = {path = "bindings"}
+math    = {path = "math"}
+render  = {path = "render"}
+image = "0.24"
+
+[profile.dev]
+opt-level = 1
