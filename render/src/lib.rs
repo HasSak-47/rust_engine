@@ -1,113 +1,83 @@
-#[allow(unused_imports)]
-use vulkano::{
-    VulkanLibrary,
-    instance::{Instance, InstanceCreateInfo},
-    device::{Device, DeviceCreateInfo, Features, QueueCreateInfo},
-    buffer::{BufferUsage, CpuAccessibleBuffer},
-    command_buffer::{AutoCommandBufferBuilder, CommandBufferUsage, CopyBufferInfo},
-    sync::{self, GpuFuture},
-};
-use bytemuck::{Pod, Zeroable};
+// cats and soup
+use std::f32::consts::PI;
 
-#[repr(C)]
-#[derive(Default, Copy, Clone, Zeroable, Pod)]
-struct CuBufferData{
-    pub a: u32,
-    pub b: u32,
+use glium::{self, Surface, implement_vertex, uniform};
+
+#[derive(Clone, Copy)]
+struct Vertex{
+    position: [f32; 4],
+    color   : [f32, 4],
+    uv      : [f32, 4],
 }
 
-
-pub fn main_loop() {
-    let library  = VulkanLibrary::new().expect("no local Vulkan library/DLL");
-    let instance = Instance::new(library, InstanceCreateInfo::default()).expect("failed to create instance");
-    let physical = instance
-        .enumerate_physical_devices()
-        .expect("could not enumarate devices")
-        .next()
-        .expect("no devices availble");
-
-    for family in physical.queue_family_properties(){
-        println!("found a queue family with {:?} queue(s)", family.queue_count);
+impl Vertex{
+    fn new(a: f32, b: f32) -> Self{
+        Vertex { position: [a, b] }
     }
+    fn newa(position: [f32; 2]) -> Self{
+        Vertex { position }
+    }
+}
 
-    let queue_family_index = physical
-        .queue_family_properties()
-        .iter()
-        .enumerate()
-        .position(|(_, q)| q.queue_flags.graphics)
-        .expect("couldn't find a graphical queue family") as u32;
+implement_vertex!(Vertex, position);
 
-    let (device, mut queues) = Device::new(
-        physical,
-        DeviceCreateInfo { 
-            queue_create_infos : vec![QueueCreateInfo {
-                queue_family_index,
-                ..Default::default()
-            }],
-            ..Default::default()
-        },
-    ).expect("failed to create device");
-    let queue = queues.next().unwrap();
+pub fn main_loop(){
+    let mut events_loop = glium::glutin::event_loop::EventLoop::new();
+    let wb = glium::glutin::window::WindowBuilder::new()
+        .with_inner_size(glium::glutin::dpi::LogicalSize::new(600.0, 600.0))
+        .with_title("penis");
+    let cb = glium::glutin::ContextBuilder::new();
+    let display = glium::Display::new(wb, cb, &events_loop).unwrap();
 
-    //example buffer
-    //--------------------------------------------------//
-    //let data = CuBufferData{a: 5, b: 10};
-    //let buffer = CpuAccessibleBuffer::from_data(
-    //    device.clone(), 
-    //    BufferUsage {
-    //        uniform_buffer: true,
-    //        ..Default::default()
-    //    },
-    //    false,
-    //    data
-    //).expect("failed to create buffer");
-    //--------------------------------------------------//
+    let vertices = [
+        Vertex::newa([ 0.5, 0.0]),
+        Vertex::newa([-0.5, 0.5]),
+        Vertex::newa([-0.5,-0.5]),
+    ];
 
-    //source buffer
-    let source_content : Vec<i32> = (0..64).collect();
-    let source = CpuAccessibleBuffer::from_iter(
-        device.clone(),
-        BufferUsage {
-            transfer_src: true,
-            ..Default::default()
-        },
-        false,
-        source_content 
-    ).expect("failed to create source buffer");
+    let vertex_buffer = glium::VertexBuffer::new(&display, &vertices).unwrap();
+    let indices       = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
-    //destination buffer
-    let destination_content : Vec<i32> = (0..64).map(|_| 0).collect();
-    let destination = CpuAccessibleBuffer::from_iter(
-        device.clone(),
-        BufferUsage {
-            transfer_dst: true,
-            ..Default::default()
-        },
-        false,
-        destination_content
-    ).expect("failed to create source buffer");
+    let (vertex_shader, fragment_shader) = {
+        let vdata = std::fs::read("shaders/vertex.glsl").unwrap();
+        let fdata = std::fs::read("shaders/fragment.glsl").unwrap(); 
 
+        (
+            String::from_utf8(vdata).unwrap(),
+            String::from_utf8(fdata).unwrap(),
+        )
+    };
 
-    let mut builder = AutoCommandBufferBuilder::primary(
-        device.clone(),
-        queue_family_index,
-        CommandBufferUsage::OneTimeSubmit
-    )
-    .unwrap();
+    let program = glium::Program::from_source(&display, vertex_shader.as_str(), fragment_shader.as_str(), None).unwrap();
+    let mut angle : f32 = 0.0;
 
-    builder
-        .copy_buffer(CopyBufferInfo::buffers(source.clone(), destination.clone()))
-        .unwrap();
-    let command_buffer = builder.build().unwrap();
+    events_loop.run(move |ev, _, control_flow|{
+        // this is for events
+        match ev {
+            glium::glutin::event::Event::WindowEvent { event, .. } => match event{
+                glium::glutin::event::WindowEvent::CloseRequested =>{
+                    *control_flow = glium::glutin::event_loop::ControlFlow::Exit;
+                    return;
+                },
+                _ => return,
+            },
+            _ => (),
+        }
 
-    sync::now(device.clone())
-    .then_execute(queue.clone(), command_buffer)
-    .unwrap()
-    .flush()
-    .unwrap();
+        // wait until next frame
+        let next_frame_time = std::time::Instant::now() + std::time::Duration::from_millis(16);
+        *control_flow = glium::glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
 
-    let dest_result = destination.read().unwrap();
-    let src_result = source.read().unwrap();
+        //uniform stuff
+        angle += (PI / 60.0) / 1000.0;
+        if angle >= 2.0 * PI{
+            angle = 0.0;
+        }
 
-    assert_eq!(&*dest_result, &*src_result);
+        // rendering
+        let mut target = display.draw();
+        target.clear_color(0.0, 0.0, 0.0, 1.0);
+        target.draw(&vertex_buffer, &indices, &program, &uniform! {angle: angle}, &Default::default()).unwrap();
+        target.finish().unwrap();
+    })
 }

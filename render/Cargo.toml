@@ -4,8 +4,5 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
-vulkano         = "0.31"
-vulkano_shaders = "0.31"
-bytemuck = "1.12.1"
-winit    = "0.27.3"
+glium = "0.32"
 
