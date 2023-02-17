@@ -1,8 +1,0 @@
--lglfw
--lvulkan
--lthread
--lX11
--lXrandr
--lXi
--I
-include

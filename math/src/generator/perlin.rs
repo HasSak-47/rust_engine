@@ -1,6 +1,3 @@
-use binds::c_perlin;
-
-
 pub use super::base::*;
 
 pub struct BasePerlinGen{
@@ -9,16 +6,7 @@ pub struct BasePerlinGen{
 
 impl Generator<f64, f64> for BasePerlinGen {
     fn generate_3d(&self, x: f64, y: f64, z: f64) -> f64 {
-        unsafe{ c_perlin::perlin_noise_seed(
-                x as f32,
-                y as f32,
-                z as f32,
-                self.gen.x_wrap,
-                self.gen.y_wrap,
-                self.gen.z_wrap,
-                self.gen.seed
-            ) as f64
-        }
+        0.
     }
 
     fn generate_2d(&self, x: f64, y: f64) -> f64 {
@@ -33,6 +21,7 @@ pub struct PerlinGen{
 }
 
 impl PerlinGen{
+    #[deprecated]
     pub fn new() -> Self{
         PerlinGen{
             gen: BasePerlinGen{
