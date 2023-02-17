@@ -1,4 +1,5 @@
 use super::vertex::{Ver2d, Unit};
+use super::util::Absolute;
 use std::ops::{
     Add, Sub, Mul, Div, Neg
 };
@@ -6,14 +7,20 @@ use std::ops::{
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Complex<T>
 where
-    T: Default + Unit + Clone + Copy + Eq + PartialEq + Add + Sub + Mul + Div + Neg,
+    T: Default + Unit + Clone + Copy + PartialEq + Add + Sub + Mul + Div + Neg + Absolute,
 {
     v: Ver2d<T>,
 }
 
 impl<T> Complex<T>
 where
-    T: Default + Unit + Clone + Copy + Eq + PartialEq + Add + Sub + Mul + Div + Neg,
+    T: Default + Unit + Clone + Copy + PartialEq
+    + Add<Output = T>
+    + Sub<Output = T>
+    + Mul<Output = T>
+    + Div<Output = T>
+    + Neg<Output = T>
+    + Absolute,
 {
 
     const COMMON : [Complex<T>; 4]= [
@@ -23,16 +30,19 @@ where
         Self::new(T::ZERO, T::NEGU),
     ];
 
-    pub const fn r(&self) -> T{self.v.data[0].clone()}
-    pub const fn i(&self) -> T{self.v.data[1].clone()}
+    pub const fn r(&self) -> T{self.v.data[0]}
+    pub const fn i(&self) -> T{self.v.data[1]}
 
     pub const fn new(r: T, i: T) -> Complex<T>{
         Complex {v: Ver2d::<T>{data: [r, i]}}
     }
 
-    pub fn abs(&self) -> T{
+    pub fn abs(&self) -> T
+    where
+        <T as Mul>::Output: Add
+    {
         ((self.r() * self.r()) +
-         (self.i() * self.i())).abs()
+         (self.i() * self.i())).sqrt()
     }
 
     //pub fn inv(&mut self) -> &mut Self{

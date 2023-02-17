@@ -57,6 +57,7 @@
 * the border always must have an opposite border 
 */
 
+/*
 use {
     super::random::Random,
     super::super::{
@@ -404,3 +405,4 @@ impl<BorderT: Eq + PartialEq + Default + Copy + Opposite>  FiniteMap<BorderT>{
         return LeastContainer {vec, grade: min_grade};
     }
 }
+*/
