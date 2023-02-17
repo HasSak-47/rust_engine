@@ -1,42 +1,42 @@
 // cats and soup
-use std::f32::consts::PI;
+// use std::f32::consts::PI;
+use glium::{self, Surface, implement_vertex};
 
-use glium::{self, Surface, implement_vertex, uniform};
+mod loader;
 
 #[derive(Clone, Copy)]
-struct Vertex{
-    position: [f32; 4],
-    color   : [f32, 4],
-    uv      : [f32, 4],
+pub struct LocalVertex{
+    position: [f32; 3],
+    normal: [f32; 3],
 }
 
-impl Vertex{
-    fn new(a: f32, b: f32) -> Self{
-        Vertex { position: [a, b] }
-    }
-    fn newa(position: [f32; 2]) -> Self{
-        Vertex { position }
+implement_vertex!(LocalVertex, position, normal);
+
+impl LocalVertex{
+    fn new(position: [f32; 3], normal: [f32; 3]) -> Self{
+        LocalVertex{position, normal}
     }
 }
 
-implement_vertex!(Vertex, position);
+impl From<obj::Vertex> for LocalVertex{
+    fn from(obj_v: obj::Vertex) -> Self {
+        LocalVertex::new(obj_v.position, obj_v.normal)
+    }
+}
 
-pub fn main_loop(){
-    let mut events_loop = glium::glutin::event_loop::EventLoop::new();
+pub fn main_thread(){
+    let events_loop = glium::glutin::event_loop::EventLoop::new();
     let wb = glium::glutin::window::WindowBuilder::new()
-        .with_inner_size(glium::glutin::dpi::LogicalSize::new(600.0, 600.0))
+        .with_inner_size(glium::glutin::dpi::LogicalSize::new(600., 600.))
         .with_title("penis");
     let cb = glium::glutin::ContextBuilder::new();
     let display = glium::Display::new(wb, cb, &events_loop).unwrap();
 
-    let vertices = [
-        Vertex::newa([ 0.5, 0.0]),
-        Vertex::newa([-0.5, 0.5]),
-        Vertex::newa([-0.5,-0.5]),
-    ];
+
+    let (vertices, indices) = loader::load("test_assets/teaset/teapot.obj");
 
     let vertex_buffer = glium::VertexBuffer::new(&display, &vertices).unwrap();
-    let indices       = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+    let index_buffer  = glium::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &indices).unwrap();
 
     let (vertex_shader, fragment_shader) = {
         let vdata = std::fs::read("shaders/vertex.glsl").unwrap();
@@ -49,7 +49,13 @@ pub fn main_loop(){
     };
 
     let program = glium::Program::from_source(&display, vertex_shader.as_str(), fragment_shader.as_str(), None).unwrap();
-    let mut angle : f32 = 0.0;
+
+    let matrix = [
+        [1.,0.,0.,0.],
+        [0.,1.,0.,0.],
+        [0.,0.,1.,0.],
+        [0.,0.,0.,1.0f32],
+    ];
 
     events_loop.run(move |ev, _, control_flow|{
         // this is for events
@@ -68,16 +74,11 @@ pub fn main_loop(){
         let next_frame_time = std::time::Instant::now() + std::time::Duration::from_millis(16);
         *control_flow = glium::glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
 
-        //uniform stuff
-        angle += (PI / 60.0) / 1000.0;
-        if angle >= 2.0 * PI{
-            angle = 0.0;
-        }
-
         // rendering
         let mut target = display.draw();
-        target.clear_color(0.0, 0.0, 0.0, 1.0);
-        target.draw(&vertex_buffer, &indices, &program, &uniform! {angle: angle}, &Default::default()).unwrap();
+        target.clear_color(0., 0., 0., 1.);
+        //target.draw(&vertex_buffer, &indices, &program, &uniform! {angle: angle}, &Default::default()).unwrap();
+        target.draw(&vertex_buffer, &index_buffer, &program, &glium::uniform!{matrix: matrix}, &Default::default()).unwrap();
         target.finish().unwrap();
     })
 }

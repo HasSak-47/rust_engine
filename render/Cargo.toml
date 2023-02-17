@@ -4,5 +4,5 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
-glium = "0.32"
-
+glium = "*"
+obj-rs = {version = "0.7", default_features=false, features = ["glium"]}

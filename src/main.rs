@@ -1,5 +1,5 @@
-use render::main_loop;
+use render::main_thread;
 
 fn main(){
-    main_loop();
+    main_thread();
 }
