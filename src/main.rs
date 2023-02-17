@@ -1,5 +1,6 @@
-use render::main_thread;
+use math::vertex::Vertex;
+use std::mem::size_of;
 
 fn main(){
-    main_thread();
+    println!("sizeof: {size}");
 }

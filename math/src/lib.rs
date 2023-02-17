@@ -6,3 +6,4 @@ pub mod general;
 pub mod quaternion;
 pub mod image;
 pub mod transform2d;
+pub mod vertex;
