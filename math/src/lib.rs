@@ -8,4 +8,3 @@ pub mod image;
 pub mod transform2d;
 pub mod vertex;
 pub mod util;
-mod number;
