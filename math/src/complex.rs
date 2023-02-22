@@ -42,7 +42,7 @@ where
         <T as Mul>::Output: Add
     {
         ((self.r() * self.r()) +
-         (self.i() * self.i())).sqrt()
+         (self.i() * self.i()))
     }
 
     //pub fn inv(&mut self) -> &mut Self{
