@@ -31,6 +31,12 @@ impl Complex{
         *self = Complex::new(self.r * a, -self.i * a);
         self
     }
+
+    pub fn r(&self) -> f64 { self.r }
+    pub fn i(&self) -> f64 { self.i }
+
+    pub fn r_mut(&mut self) -> f64 { self.r }
+    pub fn i_mut(&mut self) -> f64 { self.i }
 }
 
 impl Add<Complex> for Complex{

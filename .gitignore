@@ -1,10 +1,10 @@
 /target
 */target/*
-test.*
-*test
 *.bk
 *.bak
 /lib
 *test.*
+test_assets/*
+test_assets
 compile_flags.txt
 Cargo.lock

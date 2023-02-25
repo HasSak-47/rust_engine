@@ -4,4 +4,6 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
-glium = "*"
+loader = {path = "../loader"}
+glium  = "0.26"
+
