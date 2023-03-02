@@ -1,4 +1,6 @@
 pub mod complex;
+// for complex complex operations
+pub mod c_c_op;
 pub mod matrix;
 pub mod quaternion;
 
@@ -8,7 +10,6 @@ pub trait Units {
     const ZERO: Self;
 }
 
-// triats are confusing
 trait SquareRoot{
     type Output;
     fn _sqrt(&self) -> Self::Output;

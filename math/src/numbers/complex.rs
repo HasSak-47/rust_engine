@@ -12,11 +12,11 @@ where
 impl<T> Complex<T>
 where 
     T: Units + Copy + Clone {
-    const fn new(a: T, b: T) -> Self{
+    pub const fn new(a: T, b: T) -> Self{
         Complex::<T> {d:[a, b]}
     }
     
-    const COMMON : [Complex<T>; 4] = [
+    pub const COMMON : [Complex<T>; 4] = [
         Complex::new(T::UNIT, T::ZERO),
         Complex::new(T::ZERO, T::UNIT),
         Complex::new(T::NEGU, T::ZERO),
@@ -33,53 +33,6 @@ where
     }
 }
 
-impl<T> Mul<Complex<T>> for Complex<T>
-where
-    T: Add<Output = T>
-     + Mul<Output = T>
-     + Sub<Output = T>
-     + Units + Copy + Clone
-{
-    type Output = Complex<T>;
-
-    fn mul(self, rhs: Complex<T>) -> Self::Output {
-        Complex::<T>::new(
-            self.d[0] * rhs.d[0] - self.d[1] * rhs.d[1],
-            self.d[0] * rhs.d[1] + self.d[1] * rhs.d[0],
-        )
-    }
-}
-
-impl<T> Add<Complex<T>> for Complex<T>
-where
-    T: Add<Output = T>
-     + Units + Copy + Clone
-{
-    type Output = Complex<T>;
-
-    fn add(self, rhs: Complex<T>) -> Self::Output {
-        Complex::<T>::new(
-            self.d[0] + rhs.d[0],
-            self.d[1] + rhs.d[1],
-        )
-    }
-}
-
-
-impl<T> Sub<Complex<T>> for Complex<T>
-where
-    T: Sub<Output = T>
-     + Units + Copy + Clone
-{
-    type Output = Complex<T>;
-
-    fn sub(self, rhs: Complex<T>) -> Self::Output {
-        Complex::<T>::new(
-            self.d[0] - rhs.d[0],
-            self.d[1] - rhs.d[1],
-        )
-    }
-}
 
 impl<T> Absolute for Complex<T>
 where
@@ -92,6 +45,17 @@ where
         sqrt(self.d[0] * self.d[0])
     }
 
+}
+
+impl<T> Div<T> for Complex<T>
+where
+    T: Div<Output = T>
+     + Units + Copy + Clone
+{
+    type Output = Complex<T>;
+    fn div(self, rhs: T) -> Self::Output {
+        Complex::<T>::new(self.d[0] / rhs, self.d[1] / rhs)
+    }
 }
 
 fn unit<T>(c: Complex<T>) -> Complex<T>
