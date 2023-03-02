@@ -1,4 +1,4 @@
-use super::quaternion::Quat;
+use super::numbers::quaternion::Quat;
 use super::generator::base::Generator;
 
 pub fn diamond(input: u64, rad: u64) -> i64{
