@@ -33,7 +33,14 @@ pub fn main_thread(){
 
     //let (vertices, indices) = loader::load("test_assets/teaset/teapot.obj");
     // let input = std::io::BufRead::new(std::fs::File::open("").unwrap()).unwrap();
-    let vertices = cast_vertices(loader::load_vertices("test_assets/untitled.obj"));
+    //let vertices = cast_vertices(loader::load_vertices("test_assets/untitled.obj"));
+
+
+    let vertices = [
+        Vertex{pos: [0.0, 1.0, 0.0], nor: [0.0, 0.0, 0.0], tex: [0.0, 0.0]},
+        Vertex{pos: [0.0, 0.0, 1.0], nor: [0.0, 0.0, 0.0], tex: [0.0, 0.0]},
+        Vertex{pos: [1.0, 0.0, 0.0], nor: [0.0, 0.0, 0.0], tex: [0.0, 0.0]},
+    ];
 
     let vertex_buffer = glium::VertexBuffer::new(&display, &vertices).unwrap();
     let index_buffer  = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
@@ -50,12 +57,11 @@ pub fn main_thread(){
     };
 
     let program = glium::Program::from_source(&display, vertex_shader.as_str(), fragment_shader.as_str(), None).unwrap();
-
-    let matrix = [
-        [1.,0.,0.,0.],
-        [0.,1.,0.,0.],
-        [0.,0.,1.,0.],
-        [0.,0.,0.,1.0f32],
+    let scale_matrix = [
+        [0.001, 0.000, 0.000, 0.000,],
+        [0.000, 0.001, 0.000, 0.000,],
+        [0.000, 0.000, 0.001, 0.000,],
+        [0.000, 0.000, 0.000, 0.001f32,],
     ];
 
     events_loop.run(move |ev, _, control_flow|{
@@ -78,7 +84,7 @@ pub fn main_thread(){
         // rendering
         let mut target = display.draw();
         target.clear_color(0., 0., 0., 1.);
-        target.draw(&vertex_buffer, &index_buffer, &program, &uniform! {}, &Default::default()).unwrap();
+        target.draw(&vertex_buffer, &index_buffer, &program, &uniform! {matrix: scale_matrix}, &Default::default()).unwrap();
         target.finish().unwrap();
     })
 }

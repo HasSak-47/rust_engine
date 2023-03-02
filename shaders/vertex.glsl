@@ -2,9 +2,10 @@
 
 uniform mat4 matrix;
 
-in vec3 position;
-in vec3 normal;
+in vec3 pos;
+in vec3 nor;
+in vec2 tex;
 
 void main(){
-	gl_Position = matrix * vec4(position, 0.0);
+	gl_Position = matrix * vec4(pos, 1.0);
 }
