@@ -1,5 +1,7 @@
-use super::numbers::quaternion::Quat;
 use super::generator::base::Generator;
+use super::quaternion::Quaternion;
+
+type Quat = Quaternion<f64>;
 
 pub fn diamond(input: u64, rad: u64) -> i64{
     let i = input.clone() as i64;
