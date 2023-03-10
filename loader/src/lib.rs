@@ -42,6 +42,15 @@ pub fn load_model(path: &str) -> Model{
     model
 }
 
+/*
+fn cast_vertex(obj: &ObjData, index: usize) -> Vertex {
+    Vertex{
+        pos: obj.position[index.0],
+        nor 
+    }
+}
+*/
+
 pub fn load_vertices(path: &str) -> Vec<Vertex>{
     let file = std::fs::File::open(path).unwrap();
     let objs = ObjData::load_buf(file).unwrap();
@@ -53,10 +62,11 @@ pub fn load_vertices(path: &str) -> Vec<Vertex>{
         for group in obj.groups{
             for poly in group.polys{
                 for index in poly.0{
+                    println!("pushing!");
                     vertices.push( Vertex {
                         pos: objs.position[index.0],
                         nor: if index.1.is_some() { objs.normal[index.2.unwrap()] } else {[0., 0., 0.]},
-                        tex: if index.2.is_some() { objs.texture[index.1.unwrap()] } else {[0., 0.]},
+                        tex: [0., 0.],
                     });
                 }
             }

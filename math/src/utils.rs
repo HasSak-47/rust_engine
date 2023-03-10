@@ -1,5 +1,5 @@
 use super::generator::base::Generator;
-use super::quaternion::Quaternion;
+use super::Quaternion;
 
 type Quat = Quaternion<f64>;
 
@@ -30,7 +30,7 @@ pub fn slope(g: &dyn Generator<f64, f64>, x: f64, y: f64, delta: f64) -> f64{
     	g.generate_2d(xt[2], yt[2]),
     ];
 
-    let tri = [
+    let tri : [Quat; 3]= [
         Quat::new(0.0, xt[0], yt[0], r[0]),
         Quat::new(0.0, xt[1], yt[1], r[1]),
         Quat::new(0.0, xt[2], yt[2], r[2]),
@@ -42,8 +42,9 @@ pub fn slope(g: &dyn Generator<f64, f64>, x: f64, y: f64, delta: f64) -> f64{
     ];
 
     let mut result = mid[0] * mid[1];
-    result.r = 0.0;
-    let z = -result.k / result.abs(); 
+    result.i = 0.;
+
+    let z = -result.w / result.norm(); 
     let a = 1.0 * z.acos() / std::f64::consts::PI;
 
     a

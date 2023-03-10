@@ -41,6 +41,15 @@ where
             -self.k / numerator,
         )
     }
+
+    pub fn to_mat4(&self) -> [[T; 4]; 4]{
+        [
+            [ self.r,  self.k, -self.i, -self.j],
+            [-self.k,  self.r,  self.j, -self.i],
+            [ self.i, -self.j,  self.r, -self.k],
+            [ self.j,  self.i,  self.k,  self.r],
+        ]
+    }
 }
 
 macro_rules! impl_op{
@@ -57,6 +66,12 @@ macro_rules! impl_op{
             type Output = $type<T>;
             fn $op_n($self, $rhs: $type<T>) -> $type<T>{ $oper }
         }
+    }
+}
+
+impl From<f32> for Quaternion<f32>{
+    fn from(value: f32) -> Self {
+        Quaternion::new(value, 0., 0., 0.)
     }
 }
 
@@ -175,3 +190,35 @@ where
        Neg<   Output = T> +
        Copy + Clone
 {fn div_assign(&mut self, rhs: Quaternion<T>) {*self = *self / rhs;}}
+
+impl<T> Mul<T> for Quaternion<T>
+where
+    T: Add<T, Output = T> +
+       Sub<T, Output = T> +
+       Mul<T, Output = T> +
+       Div<T, Output = T> +
+       Neg<   Output = T> +
+       Copy + Clone
+{
+    type Output = Quaternion<T>;
+    fn mul(self, rhs: T) -> Self::Output {
+        Quaternion::new(self.r * rhs, self.i * rhs, self.j * rhs, self.k * rhs)
+    }
+}
+
+impl<T> Neg for Quaternion<T>
+where
+    T: Add<T, Output = T> +
+       Sub<T, Output = T> +
+       Mul<T, Output = T> +
+       Div<T, Output = T> +
+       Neg<   Output = T> +
+       Copy + Clone
+{
+    type Output = Self;
+    fn neg(self) -> Self::Output {
+        Quaternion::new(-self.r, -self.i, -self.j, -self.k)
+    }
+
+}
+

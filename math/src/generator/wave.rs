@@ -57,11 +57,10 @@
 * the border always must have an opposite border 
 */
 
-/*
 use {
     super::random::Random,
     super::super::{
-        general::{xdia, ydia},
+        utils::{xdia, ydia},
         transform2d::Opposite,
     },
 };
@@ -405,4 +404,3 @@ impl<BorderT: Eq + PartialEq + Default + Copy + Opposite>  FiniteMap<BorderT>{
         return LeastContainer {vec, grade: min_grade};
     }
 }
-*/

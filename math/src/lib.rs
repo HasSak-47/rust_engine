@@ -1,6 +1,10 @@
-pub use num::complex;
+// pub use num::complex;
+// pub use glm::mat4 ;
 
-pub mod quaternion;
+pub use nalgebra::geometry::Quaternion;
+pub use nalgebra;
+
+// pub mod quaternion;
 pub mod generator;
 pub mod converter;
 pub mod utils;
