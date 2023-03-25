@@ -4,6 +4,7 @@ pub struct BasePerlinGen{
     pub gen: BaseGen,
 }
 
+#[allow(unused_variables)]
 impl Generator<f64, f64> for BasePerlinGen {
     fn generate_3d(&self, x: f64, y: f64, z: f64) -> f64 {
         0.

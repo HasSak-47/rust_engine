@@ -1,52 +1,103 @@
-// cats and soup
-// use std::f32::consts::PI;
-use glium::{self, Surface, uniform};
-use math::Quaternion;
-use loader;
+#[macro_use]
+extern crate glium;
 
-type Quat = Quaternion<f32>;
+mod teapot;
 
-#[derive(Clone, Copy)]
-pub struct Vertex{
-    pub pos: [f32; 3],
-    pub nor: [f32; 3],
-    pub tex: [f32; 2],
+pub struct Vec3{
+    x: f32,
+    y: f32,
+    z: f32,
 }
 
-glium::implement_vertex!(Vertex, pos, nor, tex);
-
-fn cast_vertices(v: Vec<loader::Vertex>) -> Vec<Vertex>{
-    let mut vertices = Vec::new();
-    for vertex in v{
-        vertices.push(Vertex {pos: vertex.pos, nor: vertex.nor, tex: vertex.tex} )
-    }
+pub struct VertexVector{
+    ver: Vec<Vec3>,
+    nor: Vec<Vec3>,
+}
 
 
-    vertices
-} 
+pub fn main_thread() {
+    #[allow(unused_imports)]
+    use glium::{glutin, Surface};
+
+    let event_loop = glutin::event_loop::EventLoop::new();
+    let wb = glutin::window::WindowBuilder::new()
+        .with_inner_size(glutin::dpi::LogicalSize::new(600., 600.));
+
+    let cb = glutin::ContextBuilder::new();
+    let display = glium::Display::new(wb, cb, &event_loop).unwrap();
+
+    // let positions = glium::VertexBuffer::new(&display, &teapot::VERTICES).unwrap();
+    // let normals   = glium::VertexBuffer::new(&display, &teapot::NORMALS ).unwrap();
+    // let indices   =  glium::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &teapot::INDICES).unwrap();
+
+    let data = loader::load_vertices("test_assets/untitled.obj");
+    
+    let (vertex_shader, fragment_shader) = {
+        let vdata = std::fs::read("shaders/vertex.shader").unwrap();
+        let fdata = std::fs::read("shaders/fragment.shader").unwrap(); 
+
+        (String::from_utf8(vdata).unwrap(),
+        String::from_utf8(fdata).unwrap(),)
+    };
+
+
+    let vertex_shader_src = vertex_shader.as_str();
+    let fragment_shader_src = fragment_shader.as_str();
+
+    let program = glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src,None).unwrap();
+
+    event_loop.run(move |event, _, control_flow| {
+        let next_frame_time = std::time::Instant::now() + std::time::Duration::from_nanos(16_666_667);
+        *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
+
+        match event {
+            glutin::event::Event::WindowEvent { event, .. } => match event {
+                glutin::event::WindowEvent::CloseRequested => {
+                    *control_flow = glutin::event_loop::ControlFlow::Exit;
+                    return;
+                },
+                _ => return,
+            },
+            glutin::event::Event::NewEvents(cause) => match cause {
+                glutin::event::StartCause::ResumeTimeReached { .. } => (),
+                glutin::event::StartCause::Init => (),
+                _ => return,
+            },
+            _ => return,
+        }
+
+        let mut target = display.draw();
+        target.clear_color(0.2, 0.3, 0.3, 1.);
+
+        let matrix = [
+            [0.01, 0.0, 0.0, 0.0],
+            [0.0, 0.01, 0.0, 0.0],
+            [0.0, 0.0, 0.01, 0.0],
+            [0.0, 0.0, 0.0,  1.0f32]
+        ];
+
+        target.draw((&positions, &normals), &indices, &program, &uniform! { matrix: matrix }, &Default::default()).unwrap();
+        target.finish().unwrap();
+    });
+}
+// cats and soup
+// use std::f32::consts::PI;
+/*
+use glium::{self, Surface, uniform};
+
+mod teapot;
 
 pub fn main_thread(){
     let events_loop = glium::glutin::event_loop::EventLoop::new();
     let wb = glium::glutin::window::WindowBuilder::new()
-        .with_inner_size(glium::glutin::dpi::LogicalSize::new(600., 600.))
         .with_title("penis");
     let cb = glium::glutin::ContextBuilder::new();
     let display = glium::Display::new(wb, cb, &events_loop).unwrap();
 
 
-    // let (vertices, indices) = loader::load("test_assets/teaset/teapot.obj");
-    // let input = std::io::BufRead::new(std::fs::File::open("").unwrap()).unwrap();
-    let vertices = cast_vertices(loader::load_vertices("test_assets/untitled.obj"));
-
-    //let vertices = [
-    //    Vertex{pos: [0.0, 1.0, 0.0], nor: [0.0, 0.0, 0.0], tex: [0.0, 0.0]},
-    //    Vertex{pos: [0.0, 0.0, 1.0], nor: [0.0, 0.0, 0.0], tex: [0.0, 0.0]},
-    //    Vertex{pos: [1.0, 0.0, 0.0], nor: [0.0, 0.0, 0.0], tex: [0.0, 0.0]},
-    //];
-
-    let vertex_buffer = glium::VertexBuffer::new(&display, &vertices).unwrap();
-    let index_buffer  = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
-    //let index_buffer  = glium::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &o.indices).unwrap();
+    let positions = glium::VertexBuffer::new(&display, &teapot::VERTICES).unwrap();
+    let normal    = glium::VertexBuffer::new(&display, &teapot::NORMALS).unwrap();
+    let ind = glium::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &teapot::INDICES).unwrap();
 
     let (vertex_shader, fragment_shader) = {
         let vdata = std::fs::read("shaders/vertex.glsl").unwrap();
@@ -59,15 +110,12 @@ pub fn main_thread(){
     };
 
     let program = glium::Program::from_source(&display, vertex_shader.as_str(), fragment_shader.as_str(), None).unwrap();
-    // let scale_matrix = [
-    //     [0.001, 0.000, 0.000, 0.000,],
-    //     [0.000, 0.001, 0.000, 0.000,],
-    //     [0.000, 0.000, 0.001, 0.000,],
-    //     [0.000, 0.000, 0.000, 0.001f32,],
-    // ];
 
-    let start = std::time::Instant::now();
     events_loop.run(move |ev, _, control_flow|{
+        // wait until next frame
+        let next_frame_time = std::time::Instant::now() + std::time::Duration::from_millis(16);
+        *control_flow = glium::glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
+
         // this is for events
         match ev {
             glium::glutin::event::Event::WindowEvent { event, .. } => match event{
@@ -80,40 +128,18 @@ pub fn main_thread(){
             _ => (),
         }
 
-        // wait until next frame
-        let next_frame_time = std::time::Instant::now() + std::time::Duration::from_millis(16);
-        *control_flow = glium::glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
 
-        let angle : f32 = std::time::Instant::now().duration_since(start).as_millis() as f32 / 1000.0;
-        let mut scale_matrix : math::nalgebra::Matrix4<f32> =
-            math::nalgebra::Matrix4::<f32>::identity() *
-            math::nalgebra::Matrix4::<f32>::from_euler_angles(angle, angle, 0.)
-        ;
-        scale_matrix *= 0.001;
-
-        // god has forsaken us
-        let scale_matrix : [[f32; 4]; 4] = [
-            [*scale_matrix.get(0).unwrap(),
-             *scale_matrix.get(1).unwrap(),
-             *scale_matrix.get(2).unwrap(),
-             *scale_matrix.get(3).unwrap(),],
-            [*scale_matrix.get(4).unwrap(),
-             *scale_matrix.get(5).unwrap(),
-             *scale_matrix.get(6).unwrap(),
-             *scale_matrix.get(7).unwrap(),],
-            [*scale_matrix.get(8).unwrap(),
-             *scale_matrix.get(9).unwrap(),
-             *scale_matrix.get(10).unwrap(),
-             *scale_matrix.get(11).unwrap(),],
-            [*scale_matrix.get(12).unwrap(),
-             *scale_matrix.get(13).unwrap(),
-             *scale_matrix.get(14).unwrap(),
-             *scale_matrix.get(15).unwrap(),],
-        ];
-        // rendering
         let mut target = display.draw();
         target.clear_color(0., 0., 0., 1.);
-        target.draw(&vertex_buffer, &index_buffer, &program, &uniform! {matrix: scale_matrix}, &Default::default()).unwrap();
+
+        let scale_matrix = [
+            [1., 0., 0., 0.],
+            [0., 1., 0., 0.],
+            [0., 0., 1., 0.],
+            [0., 0., 0., 1.0f32],
+        ];
+        target.draw((&positions, &normal), &ind, &program, &uniform! {matrix: scale_matrix}, &Default::default()).unwrap();
         target.finish().unwrap();
     })
 }
+*/
