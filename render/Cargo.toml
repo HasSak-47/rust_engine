@@ -4,7 +4,7 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
-loader = {path = "../loader"}
 math   = {path = "../math"}
 glium  = "0.32.1"
+# obj-rs = { version = "0.7.1", features = ["glium"]}
 

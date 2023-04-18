@@ -1,6 +1,5 @@
 
-pub trait Converter{
-    fn convert(input: u64) -> Self;
+pub trait Converter{ fn convert(input: u64) -> Self;
     fn convert_range(min: Self, max: Self, input: u64) -> Self;
 }
 

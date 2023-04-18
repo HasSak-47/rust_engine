@@ -1,24 +1,17 @@
+/*
 #[macro_use]
 extern crate glium;
 
+use std::fs::File;
+use std::io::BufReader;
+use obj::*;
+
 mod teapot;
 
-pub struct Vec3{
-    x: f32,
-    y: f32,
-    z: f32,
-}
-
-pub struct VertexVector{
-    ver: Vec<Vec3>,
-    nor: Vec<Vec3>,
-}
-
+#[allow(unused_imports)]
+use glium::{glutin, Surface};
 
 pub fn main_thread() {
-    #[allow(unused_imports)]
-    use glium::{glutin, Surface};
-
     let event_loop = glutin::event_loop::EventLoop::new();
     let wb = glutin::window::WindowBuilder::new()
         .with_inner_size(glutin::dpi::LogicalSize::new(600., 600.));
@@ -26,12 +19,17 @@ pub fn main_thread() {
     let cb = glutin::ContextBuilder::new();
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
-    // let positions = glium::VertexBuffer::new(&display, &teapot::VERTICES).unwrap();
-    // let normals   = glium::VertexBuffer::new(&display, &teapot::NORMALS ).unwrap();
-    // let indices   =  glium::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &teapot::INDICES).unwrap();
 
-    let data = loader::load_vertices("test_assets/untitled.obj");
-    
+    let input     = BufReader::new(File::open("assets/test.obj").unwrap());
+    let obj: Obj  = load_obj(input).unwrap();
+
+    let positions = obj.vertex_buffer(&display).unwrap();
+    let indices   = obj.index_buffer(&display).unwrap();
+
+    let positions = glium::VertexBuffer::new(&display, &teapot::VERTICES).unwrap();
+    // let normals   = glium::VertexBuffer::new(&display, &teapot::NORMALS ).unwrap();
+    let indices   = glium:: IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &teapot::INDICES).unwrap();
+
     let (vertex_shader, fragment_shader) = {
         let vdata = std::fs::read("shaders/vertex.shader").unwrap();
         let fdata = std::fs::read("shaders/fragment.shader").unwrap(); 
@@ -76,7 +74,7 @@ pub fn main_thread() {
             [0.0, 0.0, 0.0,  1.0f32]
         ];
 
-        target.draw((&positions, &normals), &indices, &program, &uniform! { matrix: matrix }, &Default::default()).unwrap();
+        target.draw(&positions, &indices, &program, &uniform! { matrix: matrix }, &Default::default()).unwrap();
         target.finish().unwrap();
     });
 }
@@ -142,4 +140,5 @@ pub fn main_thread(){
         target.finish().unwrap();
     })
 }
+*/
 */

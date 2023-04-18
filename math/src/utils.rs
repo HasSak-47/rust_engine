@@ -1,5 +1,6 @@
+/*
 use super::generator::base::Generator;
-use super::Quaternion;
+use super::quaternion::Quaternion;
 
 type Quat = Quaternion<f64>;
 
@@ -44,8 +45,9 @@ pub fn slope(g: &dyn Generator<f64, f64>, x: f64, y: f64, delta: f64) -> f64{
     let mut result = mid[0] * mid[1];
     result.i = 0.;
 
-    let z = -result.w / result.norm(); 
+    let z = -result.k / result.norm(); 
     let a = 1.0 * z.acos() / std::f64::consts::PI;
 
     a
 }
+*/
