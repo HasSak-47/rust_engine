@@ -20,6 +20,7 @@ pub trait NegU{
     const NEGU: Self;
 }
 
+
 macro_rules! implement_opers {
     ($type: ty) => {
         impl Sqrt for $type {
@@ -36,7 +37,6 @@ macro_rules! implement_opers {
 implement_opers!(f32);
 implement_opers!(f64);
 
-
 macro_rules! implement_units{
     ($type: ty) => {
         impl Unit for $type{const UNIT: Self = 1 as $type;}
@@ -45,10 +45,11 @@ macro_rules! implement_units{
     };
 }
 
-implement_units!(f64);
 implement_units!(f32);
-implement_units!(i128);
-implement_units!(i64);
-implement_units!(i32);
-implement_units!(i16);
+implement_units!(f64);
 implement_units!(i8);
+implement_units!(i16);
+implement_units!(i32);
+implement_units!(i64);
+implement_units!(i128);
+implement_units!(isize);

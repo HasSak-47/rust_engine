@@ -1,13 +1,11 @@
-use std::ops::Deref;
-
 macro_rules! vec_maker{
-    ($name: ident, $($comp: ident), *) => {
-        #[repr(C)]
-        #[derive(Clone, Copy, Eq, PartialEq)]
-        pub struct $name<T>{
-            $(pub $comp: T,)*
-        }
-    };
+	($name: ident, $($comp: ident), *) => {
+		#[repr(C)]
+		#[derive(Clone, Copy, Eq, PartialEq)]
+		pub struct $name<T>{
+			$(pub $comp: T,)*
+		}
+	};
 }
 
 vec_maker!(Vec2, x, y);
