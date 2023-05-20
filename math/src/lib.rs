@@ -4,7 +4,7 @@
 // pub use nalgebra::geometry::Quaternion;
 // pub use nalgebra;
 
-pub mod generator;
+pub mod rand_noise;
 pub mod converter;
 pub mod utils;
 pub mod image;

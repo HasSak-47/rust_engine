@@ -1,3 +1,4 @@
+pub mod base_matrix;
 pub mod complex;
 pub mod quaternion;
 pub mod vector;
