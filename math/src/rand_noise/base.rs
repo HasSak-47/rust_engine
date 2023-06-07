@@ -1,5 +1,5 @@
-pub type Seed64 = u64;
 
+pub type Seed64 = u64;
 pub struct BaseGen{
     pub seed: Seed64,
     pub x_wrap: u64,

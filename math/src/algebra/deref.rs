@@ -66,3 +66,11 @@ impl_deref!(Container<T, 4, 1>, XYZW<T>);
 impl_deref!(Container<T, 2, 2>, MAT2x2<T>);
 impl_deref!(Container<T, 3, 3>, MAT3x3<T>);
 impl_deref!(Container<T, 4, 4>, MAT4x4<T>);
+
+use super::complex::Complex;
+make_deref!(RI  , r, i);
+impl_deref!(Complex<T>, RI<T>);
+
+use super::quaternion::Quaternion;
+make_deref!(RIJK, r, i, j, k);
+impl_deref!(Quaternion<T>, RIJK<T>);

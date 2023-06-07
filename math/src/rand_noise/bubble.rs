@@ -2,7 +2,6 @@ use super::{
     base::{self, BaseGen, Seed64},
     random::*,
 };
-
 use std::num::Wrapping;
 
 pub use base::Generator;
@@ -58,8 +57,8 @@ impl base::Generator<f64, f64> for BubbleGen {
                 sy %= self.gen.y_wrap;
             }
 
-            let px = f64::rands(sx.0) + qx as f64; 
-            let py = f64::rands(sy.0) + qy as f64; 
+            let px = rands::<f64>(sx.0) + qx as f64; 
+            let py = rands::<f64>(sy.0) + qy as f64; 
 
             let dx = x - px;
             let dy = y - py;

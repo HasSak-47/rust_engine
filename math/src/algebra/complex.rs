@@ -4,25 +4,12 @@ use std::ops::{
 	Neg,
 
 	AddAssign, SubAssign, MulAssign, DivAssign,
-	Deref
 };
-
-use super::vector::Vec2;
-
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Complex<T> {
 	t : [T; 2],
-}
-
-impl<T> Deref for Complex<T>{
-	type Target = Vec2<T>;
-	fn deref(&self) -> &Self::Target {
-		let this_ptr : *const Self = &*self;
-		unsafe{ &*(this_ptr as *const Vec2<T>) }
-	}
-
 }
 
 #[allow(dead_code)]
@@ -89,7 +76,7 @@ mod test{
 	#[test]
 	fn deref_test(){
 		let a : Complex<f64> = Complex::new(1., 2.);
-		assert_eq!(a.t[0], a.x);
-		assert_eq!(a.t[1], a.y);
+		assert_eq!(a.t[0], a.r);
+		assert_eq!(a.t[1], a.i);
 	}
 }
