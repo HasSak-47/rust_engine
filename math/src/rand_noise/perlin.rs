@@ -1,59 +1,57 @@
-pub use super::base::*;
+use std::f32::consts::PI;
 
-pub struct BasePerlinGen{
-    pub gen: BaseGen,
+use super::{
+    base::{Grid2d, Engine2d},
+    random::rands_range,
+};
+
+pub struct PerlinWrapping{
+   pub grid: Grid2d<(f32, f32)>, 
 }
 
-#[allow(unused_variables)]
-impl Generator<f64, f64> for BasePerlinGen {
-    fn generate_3d(&self, x: f64, y: f64, z: f64) -> f64 {
-        0.
+impl PerlinWrapping{
+    fn random(x: usize, y: usize, seed: u64) -> (f32, f32) {
+        let sd = x * x * x + y * x + y;
+        let sd = sd as u64;
+        let f = rands_range::<f32>(0., 2. * PI, sd * (seed + 1));
+
+        (f.cos(), f.sin())
     }
-
-    fn generate_2d(&self, x: f64, y: f64) -> f64 {
-        self.generate_3d(x, y, 0.0)
-    }
-}
-
-pub struct PerlinGen{
-    pub gen: BasePerlinGen,
-    pub iter: usize,
-    pub scale: f64,
-}
-
-impl PerlinGen{
-    #[deprecated]
-    pub fn new() -> Self{
-        PerlinGen{
-            gen: BasePerlinGen{
-                gen : BaseGen{
-                    seed: 0,
-                    x_wrap: 0,
-                    y_wrap: 0,
-                    z_wrap: 0,
-
-                    min: 0.0,
-                    max: 0.0,
-                }
-            },
-            iter: 4,
-            scale: 2.0,
-        }
+    pub fn init(x: usize, y: usize, seed: u64) -> Self{
+        PerlinWrapping {grid: Grid2d::init(x, y, seed, Self::random)}
     }
 }
 
-impl Generator<f64, f64> for PerlinGen{
-    fn generate_3d(&self, x: f64, y: f64, z: f64) -> f64 {
-        let mut r = 0.0;
-        for i in 0..self.iter{
-            let d = self.scale.powi(i as i32);
-            r += (1.0 / d) * self.gen.generate_3d(x * d, y * d, z * d)
-        }
-        r
-    }
+impl Engine2d<f32, f32> for PerlinWrapping{
 
-    fn generate_2d(&self, x: f64, y: f64) -> f64 {
-        self.generate_3d(x, y, 0.0)
-    }
+    fn generate(&self, x: f32, y: f32) -> f32 {
+        let interpolate = |a: f32, b: f32, w: f32| (b - a) * (3.0 - w * 2.0) * w * w + a;
+        let gradient    = |coord_x : isize, coord_y: isize, x: f32, y: f32| {
+            let delta_x = x - coord_x as f32;
+            let delta_y = y - coord_y as f32;
+            
+            let arrow = self.grid.iget(coord_x, coord_y);
+            delta_x * arrow.0 + delta_y * arrow.1
+        };
 
+        let cuad_x  = x.floor() as isize;
+        let cuad_y  = y.floor() as isize;
+        let delta_x = x - cuad_x as f32;
+        let delta_y = y - cuad_y as f32;
+
+        let ix0 = interpolate(
+            gradient(cuad_x + 0, cuad_y + 0, x, y),
+            gradient(cuad_x + 1, cuad_y + 0, x, y),
+            delta_x,
+        );
+
+        let ix1 = interpolate(
+            gradient(cuad_x + 0, cuad_y + 1, x, y),
+            gradient(cuad_x + 1, cuad_y + 1, x, y),
+            delta_x,
+        );
+
+        interpolate(ix0, ix1, delta_y)
+    }
 }
+
