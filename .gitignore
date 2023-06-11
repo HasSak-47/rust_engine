@@ -4,6 +4,7 @@
 *.bak
 /lib
 *test.*
+test/
 test_assets/*
 test_assets
 compile_flags.txt

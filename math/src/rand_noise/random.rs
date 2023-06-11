@@ -36,7 +36,7 @@ pub fn rands<T: Converter>(seed: u64) -> T {
     T::convert(rands_noise(seed))
 }
 
-pub fn random<T: Converter>(seed: u64) -> T {
+pub fn random<T: Converter>() -> T {
     T::convert(rand_noise())
 }
 

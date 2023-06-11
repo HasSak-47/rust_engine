@@ -1,80 +1,60 @@
 use super::{
-    base::{self, BaseGen, Seed64},
-    random::*,
+    base::{Grid2d, Engine2d},
+    random::rands,
 };
-use std::num::Wrapping;
 
-pub use base::Generator;
-
-pub fn bubble_gens_3d(x: &f64, y: &f64, z: &f64, seed: &Seed64) -> f64{
-    return x + y + z + 2.0 + seed.clone() as f64;
+pub struct WorleyWrapping {
+    pub grid: Grid2d<(f32, f32)>,
 }
 
-// pub fn bubble_gen_2d(x: &f64, y: &f64) -> f64{
-//     return bubble_gens_2d(x, y, &0);
-// }
-// 
-// pub fn bubble_gen_3d(x: &f64, y: &f64, z: &f64) -> f64{
-//     return bubble_gens_3d(x, y, z, &0);
-// }
+impl WorleyWrapping{
 
-pub struct BubbleGen {
-    pub gen: BaseGen,
-}
+    pub fn init(x: usize, y: usize, seed: u64) -> Self {
 
-impl BubbleGen{
-    pub fn new() -> Self{
-        BubbleGen{
-            gen: BaseGen {
-                seed: 0,
-                x_wrap: 0,
-                y_wrap: 0,
-                z_wrap: 0,
-                min: 0.0, max: 0.0 }
-        }
+        let random = |xr: usize, yr: usize, seed: u64| -> (f32, f32) {
+            let (xr, yr) = (xr as u64, yr as u64);
+            let x = x as u64;
+            let seeda = (xr + seed) + yr * x;
+            let seedb = (yr + seed) + xr * x;
+
+            (rands::<f32>(seeda), rands::<f32>(seedb))
+        };
+        WorleyWrapping { grid: Grid2d::init(x, y, seed, random)}
     }
 }
 
-impl base::Generator<f64, f64> for BubbleGen {
-    fn generate_2d(&self, x: f64, y: f64) -> f64{
-        let xi = x.floor() as i64;
-        let yi = y.floor() as i64;
+impl Engine2d<f32, f32> for WorleyWrapping{
+    fn generate(&self, x: f32, y: f32) -> f32 {
+        let x = x % self.grid.x as f32;
+        let y = y % self.grid.y as f32;
 
-        let mut min = 5.0;
-        for i in 0..9{
-            let qx = xi + (i % 3) - 1;
-            let qy = yi + (i / 3) - 1;
+        let cuad_x = x.floor() as isize; 
+        let cuad_y = y.floor() as isize; 
 
-            let mut sx = Wrapping(self.gen.seed.clone());
-            let mut sy = Wrapping(self.gen.seed.clone());
-            sx += (qx & qy) as u64;
-            sy += (qx ^ qy) as u64;
+        let points = [
+            (-1, -1), (-1,  0), (-1,  1),
+            ( 0, -1), ( 0,  0), ( 0,  1),
+            ( 1, -1), ( 1,  0), ( 1,  1),
+        ];
 
-            if self.gen.x_wrap != 0{
-                sx %= self.gen.x_wrap;
+        let mut min_d = f32::INFINITY;
+        for point in points{
+            let cuad = (
+                (cuad_x + point.0) as f32,
+                (cuad_y + point.1) as f32
+            );
+
+            let point = self.grid.iget(cuad_x + point.0, cuad_y + point.1);
+
+            let dx = (point.0 + cuad.0) - x;
+            let dy = (point.1 + cuad.1) - y;
+
+            let d = (dx * dx + dy * dy).sqrt();
+            if d < min_d{
+                min_d = d;
             }
-            if self.gen.y_wrap != 0{
-                sy %= self.gen.y_wrap;
-            }
-
-            let px = rands::<f64>(sx.0) + qx as f64; 
-            let py = rands::<f64>(sy.0) + qy as f64; 
-
-            let dx = x - px;
-            let dy = y - py;
-            
-            let dist = dx * dx + dy * dy;
-            if dist < min{
-                min = dist;
-            }
-
         }
-
-        return min;
-    }
-
-    fn generate_3d(&self, x: f64, y: f64, z: f64) -> f64{
-        return bubble_gens_3d(&x, &y, &z, &self.gen.seed);
+        min_d
     }
 
 }
