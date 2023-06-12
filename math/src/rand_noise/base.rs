@@ -51,20 +51,17 @@ impl<T: Debug> Grid2d<T> {
 
 }
 
-pub trait Engine2d<ReturnT, InT>
-where
-    InT: Default,
-{
+pub trait Engine2d<ReturnT, InT> {
     fn generate(&self, x: InT, y: InT) -> ReturnT;
 }
 
 pub fn inter_gen<T: Engine2d<f32, f32>>(gen: &T, iters: usize, x: f32, y: f32) -> f32{
     let mut r = 0.;
     let div = (1 << iters) as f32;
-    for i in 0..iters{
+    for i in 0..=iters{
         let p = 2f32.powi(i as i32);
-        r += gen.generate(x * p , y * p) / p;
+        r += gen.generate(x * p , y * p) / 2f32.powi(i as i32);
     }
 
-    r * (1. - 1. / div)
+    r * (2. - 1. / div)
 }

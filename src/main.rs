@@ -1,11 +1,11 @@
-use std::f32::{INFINITY, NEG_INFINITY};
+use std::{f32::{INFINITY, NEG_INFINITY}, time::UNIX_EPOCH};
 
 use image::GrayImage;
-use math::rand_noise::{
+use math::{rand_noise::{
     perlin::PerlinWrapping,
     bubble::WorleyWrapping,
-    base::Engine2d,
-};
+    base::Engine2d, base::inter_gen,
+}, image::filter3x3};
 
 struct FloatMap{
     data: Vec<f32>,
@@ -14,8 +14,7 @@ struct FloatMap{
 }
 
 impl FloatMap {
-    fn new(width: usize, height: usize) -> Self{ Self { data: Vec::with_capacity(width * height), width, height } }
-    fn get(&self, x: usize, y: usize) -> &f32{ &self.data[x + y * self.width] }
+    fn new(width: usize, height: usize) -> Self{ Self { data: vec![0.; width * height], width, height } } fn get(&self, x: usize, y: usize) -> &f32{ &self.data[x + y * self.width] }
     fn get_mut(&mut self, x: usize, y: usize) -> &mut f32{ &mut self.data[x + y * self.width] }
 
     fn normalize(&mut self){
@@ -47,33 +46,74 @@ impl Into<GrayImage> for FloatMap{
 }
 
 const RESO: usize = 512;
-const STEP: usize = 16;
-const ZOOM: f32   = 16.;
+const STEP: usize =  16;
+const ZOOM: f32   =  64.;
 
+#[allow(unused_variables)]
 fn main(){
     let mut height_map = FloatMap::new(RESO, RESO);
     let mut   step_map = FloatMap::new(RESO, RESO);
-    let perlin = PerlinWrapping::init(2, 2, 0);
-    // let worley = WorleyWrapping::init(1, 1, 0);
+    let seed = 0; //std::time::SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as u64;
+    let perlin = PerlinWrapping::init(4, 4, seed);
+    let worley = WorleyWrapping::init(8, 8, seed);
     for indx in 0..RESO*RESO{
         let (i, j) = (indx % RESO, indx / RESO);
         let (x, y) = ( i as f32 / ZOOM, j as f32 / ZOOM);
 
-        *height_map.get_mut(i, j) = perlin.generate(x, y);
+        let h = perlin.generate(x, y);
+
+        *height_map.get_mut(i, j) = h;
     }
 
     height_map.normalize();
 
+    /*
+    let heighter = |x: f32| {
+        if x < 0.5
+            {2. * x * x}
+        else
+            {-2. * (x - 1.) * (x - 1.) + 1.}
+    };
+    */
+
+    let heighter = |x| x;
+
     for indx in 0..RESO*RESO{
         let (i, j) = (indx % RESO, indx / RESO);
-        *step_map.get_mut(i, j) = (height_map.get(i, j) * STEP as f32) % 1.;
+        let step = (height_map.get(i, j) * STEP as f32) % 1.;
+        *step_map.get_mut(i, j) = heighter(step);
     }
 
-    height_map.into();
-    // let height_image: GrayImage = height_map.into();
-    // let   step_image: GrayImage =   step_map.into();
+    let height_image: GrayImage = height_map.into();
+    let   step_image: GrayImage =   step_map.into();
 
+    height_image.save("test/height.png").unwrap();
+      step_image.save("test/step.png").unwrap();
 
+    let clamper = |a: f32, b : f32, c: f32, d: f32| (
+        a.abs() as u8, b.abs() as u8,
+        c.abs() as u8, d.abs() as u8,
+    );
 
+    let horizontal_border_image = filter3x3(&height_image, &[
+        -1.0, -2.0, -1.0,
+         0.0,  0.0,  0.0,
+         1.0,  2.0,  1.0,
+    ], clamper);
+    
+    let   vertical_border_image = filter3x3(&height_image, &[
+        -1.0,  0.0,  1.0,
+        -2.0,  0.0,  2.0,
+        -1.0,  0.0,  1.0,
+    ], clamper );
 
+    let mut border_image = GrayImage::new(RESO as u32, RESO as u32);
+        
+    for indx in 0..RESO*RESO{
+        let (i, j) = ((indx % RESO) as u32, (indx / RESO) as u32);
+
+        border_image.get_pixel_mut(i, j).0[0] = if step_image.get_pixel(i, j).0[0] >= 200 { 255 } else { 0 }
+    }
+
+    border_image.save("test/border.png").unwrap();
 }

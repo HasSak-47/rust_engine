@@ -10,15 +10,16 @@ pub struct PerlinWrapping{
 }
 
 impl PerlinWrapping{
-    fn random(x: usize, y: usize, seed: u64) -> (f32, f32) {
-        let sd = x * x * x + y * x + y;
-        let sd = sd as u64;
-        let f = rands_range::<f32>(0., 2. * PI, sd * (seed + 1));
-
-        (f.cos(), f.sin())
-    }
     pub fn init(x: usize, y: usize, seed: u64) -> Self{
-        PerlinWrapping {grid: Grid2d::init(x, y, seed, Self::random)}
+        let random = |xr: usize, yr: usize, seed: u64| -> (f32, f32) {
+            let (xr, yr) = (xr as u64, yr as u64);
+            let x = x as u64;
+            let angle = rands_range(0., 2. * PI, (xr + seed) + yr * x);
+
+            angle.sin_cos()
+        };
+
+        PerlinWrapping {grid: Grid2d::init(x, y, seed, random)}
     }
 }
 
