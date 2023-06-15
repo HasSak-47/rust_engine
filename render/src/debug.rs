@@ -1,6 +1,7 @@
-use ash;
+// FUCKING WILD WAY TO IMPLEMENT HALF OF THIS SHIT BUT OKAY
+use ash::{self, vk};
 
-pub const VALIDATION_LAYERS : &[*const i8] = &[
+const VALIDATION_LAYERS : &[*const i8] = &[
     "VK_LAYER_KHRONOS_validation\0".as_ptr() as *const i8,
 ];
 pub const ENABLE_VALIDATION : bool = true;
@@ -84,5 +85,50 @@ pub fn get_validation_layers() -> (*const *const i8, u32){
     }
     else {
         (std::ptr::null(), 0)
+    }
+}
+
+unsafe extern "system" fn debug_utils_callback(
+    m_severity : vk::DebugUtilsMessageSeverityFlagsEXT,
+    m_type     : vk::DebugUtilsMessageTypeFlagsEXT,
+    p_call_data: *const vk::DebugUtilsMessengerCallbackDataEXT,
+    _p_data    : *mut std::ffi::c_void,
+) -> vk::Bool32 {
+    let severity = match m_severity {
+        vk::DebugUtilsMessageSeverityFlagsEXT::VERBOSE => "[Verbose]",
+        vk::DebugUtilsMessageSeverityFlagsEXT::WARNING => "[Warning]",
+        vk::DebugUtilsMessageSeverityFlagsEXT::ERROR => "[Error]",
+        vk::DebugUtilsMessageSeverityFlagsEXT::INFO => "[Info]",
+        _ => "[Unknown]",
+    };
+    let types = match m_type {
+        vk::DebugUtilsMessageTypeFlagsEXT::GENERAL => "[General]",
+        vk::DebugUtilsMessageTypeFlagsEXT::PERFORMANCE => "[Performance]",
+        vk::DebugUtilsMessageTypeFlagsEXT::VALIDATION => "[Validation]",
+        _ => "[Unknown]",
+    };
+    let message = std::ffi::CStr::from_ptr((*p_call_data).p_message);
+    println!("[Debug]{}{}{:?}", severity, types, message);
+
+    vk::FALSE
+}
+
+pub fn populate_debug_messenger_create_info() -> vk::DebugUtilsMessengerCreateInfoEXT {
+    use std::ptr;
+    use vk::{StructureType, DebugUtilsMessageSeverityFlagsEXT, DebugUtilsMessengerCreateFlagsEXT, DebugUtilsMessageTypeFlagsEXT};
+    vk::DebugUtilsMessengerCreateInfoEXT {
+        s_type: StructureType::DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+        p_next: std::ptr::null(),
+        flags: DebugUtilsMessengerCreateFlagsEXT::empty(),
+        message_severity:
+            DebugUtilsMessageSeverityFlagsEXT::WARNING |
+            // DebugUtilsMessageSeverityFlagsEXT::VERBOSE |
+            // DebugUtilsMessageSeverityFlagsEXT::INFO |
+            DebugUtilsMessageSeverityFlagsEXT::ERROR,
+        message_type: DebugUtilsMessageTypeFlagsEXT::GENERAL
+            | DebugUtilsMessageTypeFlagsEXT::PERFORMANCE
+            | DebugUtilsMessageTypeFlagsEXT::VALIDATION,
+        pfn_user_callback: Some(debug_utils_callback),
+        p_user_data: ptr::null_mut(),
     }
 }

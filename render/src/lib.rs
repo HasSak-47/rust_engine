@@ -2,6 +2,8 @@ mod platform;
 mod consts;
 mod debug;
 
+use std::os::raw::c_void;
+
 use winit::{
     event_loop::{EventLoop, ControlFlow}, window::WindowBuilder,
     event::WindowEvent,
@@ -14,6 +16,8 @@ struct VulkanApp{
 
 pub use consts::*;
 pub use debug::*;
+
+use crate::platform::required_extension_names;
 
 impl VulkanApp{
 
@@ -50,21 +54,32 @@ impl VulkanApp{
         };
 
 
-        let create_info = InstanceCreateInfo {
+        let extension_names = required_extension_names();
+        /*
+        for ex in extension_names{
+            println!("{ex:?} {}", unsafe {*ex});
+        }
+        */
+
+        let callback_create_info = populate_debug_messenger_create_info();
+
+        let instance_create_info = InstanceCreateInfo {
             s_type: StructureType::INSTANCE_CREATE_INFO,
             p_application_info: &app_info,
-            enabled_extension_count: 0,
             flags: InstanceCreateFlags::empty(),
-            pp_enabled_extension_names: std::ptr::null(),
+
+            //extension
+            pp_enabled_extension_names: extension_names.as_ptr(),
+            enabled_extension_count: extension_names.len() as u32,
 
             // validation layers
             enabled_layer_count: layer_count,
             pp_enabled_layer_names: layers_ptr,
-            p_next: std::ptr::null(),
+            p_next: &callback_create_info as *const ash::vk::DebugUtilsMessengerCreateInfoEXT as *const c_void,
         };
 
         let instance: Instance = unsafe{
-            entry.create_instance(&create_info, None)
+            entry.create_instance(&instance_create_info, None)
             .expect("Failed to create instance!")
         };
 
