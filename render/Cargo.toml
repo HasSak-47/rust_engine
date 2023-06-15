@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 math   = {path = "../math"}
-glium  = "0.32.1"
+ash    = "0.37"
+winit  = "0.28"
 # obj-rs = { version = "0.7.1", features = ["glium"]}
 
