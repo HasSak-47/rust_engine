@@ -7,11 +7,14 @@ use std::os::raw::c_void;
 use winit::{
     event_loop::{EventLoop, ControlFlow}, window::WindowBuilder,
     event::WindowEvent,
-    dpi::{Size, PhysicalSize}, };
+    dpi::{Size, PhysicalSize},
+};
 
 struct VulkanApp{
     _entry: ash::Entry,
     instance: ash::Instance,
+    debug_utils_loader: ash::extensions::ext::DebugUtils,
+    debug_messanger: ash::vk::DebugUtilsMessengerEXT,
 }
 
 pub use consts::*;
@@ -29,8 +32,7 @@ impl VulkanApp{
                 StructureType,
                 API_VERSION_1_0,
                 make_api_version,
-                InstanceCreateInfo,
-                InstanceCreateFlags,
+                InstanceCreateInfo, InstanceCreateFlags,
             },
         };
 
@@ -55,12 +57,6 @@ impl VulkanApp{
 
 
         let extension_names = required_extension_names();
-        /*
-        for ex in extension_names{
-            println!("{ex:?} {}", unsafe {*ex});
-        }
-        */
-
         let callback_create_info = populate_debug_messenger_create_info();
 
         let instance_create_info = InstanceCreateInfo {
@@ -103,20 +99,23 @@ impl VulkanApp{
         let entry = unsafe{ Entry::load().expect("failed to load entry!") };
         let instance = Self::create_instance(&entry);
 
-        Self { _entry: entry, instance }
+        let (debug_utils_loader, debug_messanger) = setup_debug_utils(&entry, &instance);
+
+        Self { _entry: entry, instance, debug_utils_loader, debug_messanger }
     }
 
 }
 
 impl Drop for VulkanApp{
-    fn drop(&mut self) {
-        unsafe{ self.instance.destroy_instance(None); }
-    }
+    fn drop(&mut self) { unsafe {
+        self.debug_utils_loader.destroy_debug_utils_messenger(self.debug_messanger, None);
+        self.instance.destroy_instance(None);
+    }}
 }
 
 pub fn _main(){
     let event_loop = EventLoop::new();
-    let _window = VulkanApp::init_window(&event_loop);
+    let _window    = VulkanApp::init_window(&event_loop);
     let vulkan_app = VulkanApp::new();
 
     use winit::event::Event::*;

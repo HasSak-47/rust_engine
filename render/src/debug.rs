@@ -113,6 +113,7 @@ unsafe extern "system" fn debug_utils_callback(
     vk::FALSE
 }
 
+
 pub fn populate_debug_messenger_create_info() -> vk::DebugUtilsMessengerCreateInfoEXT {
     use std::ptr;
     use vk::{StructureType, DebugUtilsMessageSeverityFlagsEXT, DebugUtilsMessengerCreateFlagsEXT, DebugUtilsMessageTypeFlagsEXT};
@@ -130,5 +131,24 @@ pub fn populate_debug_messenger_create_info() -> vk::DebugUtilsMessengerCreateIn
             | DebugUtilsMessageTypeFlagsEXT::VALIDATION,
         pfn_user_callback: Some(debug_utils_callback),
         p_user_data: ptr::null_mut(),
+    }
+}
+
+pub fn setup_debug_utils( entry: &ash::Entry, instance: &ash::Instance,) ->
+(ash::extensions::ext::DebugUtils, vk::DebugUtilsMessengerEXT) {
+    let debug_utils_loader = ash::extensions::ext::DebugUtils::new(entry, instance);
+
+    if ENABLE_VALIDATION == false {
+        (debug_utils_loader, ash::vk::DebugUtilsMessengerEXT::null())
+    } else {
+        let messenger_ci = populate_debug_messenger_create_info();
+
+        let utils_messenger = unsafe {
+            debug_utils_loader
+                .create_debug_utils_messenger(&messenger_ci, None)
+                .expect("Debug Utils Callback")
+        };
+
+        (debug_utils_loader, utils_messenger)
     }
 }
