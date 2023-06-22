@@ -1,5 +1,5 @@
 use std::num::Wrapping;
-use super::super::converter::Converter;
+use super::converter::Converter;
 
 static mut RANDOM_SEED : u64 = 0;
 

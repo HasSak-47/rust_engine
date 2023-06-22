@@ -3,15 +3,11 @@ name    = "swiedowski_engine"
 version = "1.0.0"
 edition = "2021"
 
-[workspace]
-members = [
-	"math",
-	"render",
-]
 
 [dependencies]
-math    = {path = "math"}
-render  = {path = "render"}
+math    = {path = "../math"}
+render  = {path = "../render"}
+noise   = {path = "../rand_noise"}
 image = "0.24"
 
 [profile.dev]
