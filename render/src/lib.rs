@@ -108,7 +108,9 @@ impl VulkanApp{
 
 impl Drop for VulkanApp{
     fn drop(&mut self) { unsafe {
-        self.debug_utils_loader.destroy_debug_utils_messenger(self.debug_messanger, None);
+        if ENABLE_VALIDATION{
+            self.debug_utils_loader.destroy_debug_utils_messenger(self.debug_messanger, None);
+        }
         self.instance.destroy_instance(None);
     }}
 }
@@ -116,6 +118,7 @@ impl Drop for VulkanApp{
 pub fn _main(){
     let event_loop = EventLoop::new();
     let _window    = VulkanApp::init_window(&event_loop);
+    /*
     let vulkan_app = VulkanApp::new();
 
     use winit::event::Event::*;
@@ -139,6 +142,7 @@ pub fn _main(){
             _ => (),
         }
     })
+    */
 }
 
 pub fn main(){
