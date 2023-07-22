@@ -8,9 +8,12 @@ pub struct WorleyWrapping {
 }
 
 impl WorleyWrapping{
+    pub const fn new(x: usize, y: usize, seed: u64) -> Self{
+        WorleyWrapping {grid: Grid2d::new(x, y, seed)}
+    }
 
-    pub fn init(x: usize, y: usize, seed: u64) -> Self {
-
+    pub fn init(&mut self) {
+        let x = self.grid.x as u64;
         let random = |xr: usize, yr: usize, seed: u64| -> (f32, f32) {
             let (xr, yr) = (xr as u64, yr as u64);
             let x = x as u64;
@@ -19,7 +22,8 @@ impl WorleyWrapping{
 
             (rands::<f32>(seeda), rands::<f32>(seedb))
         };
-        WorleyWrapping { grid: Grid2d::init(x, y, seed, random)}
+        self.grid.init(random);
+        //WorleyWrapping { grid: Grid2d::init(x, y, seed, random)}
     }
 }
 

@@ -1,6 +1,6 @@
 [package]
-name    = "swiedowski_engine"
-version = "1.0.0"
+name    = "engine"
+version = "0.1.0"
 edition = "2021"
 
 
