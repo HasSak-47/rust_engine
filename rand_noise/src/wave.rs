@@ -55,14 +55,17 @@
 *
 *
 * the border always must have an opposite border 
+*/
 
 use {
-    super::random::Random,
-    super::super::{
-        utils::{xdia, ydia},
-        transform2d::Opposite,
-    },
+    crate::random::*,
+    math::utils::*,
+    
 };
+
+pub trait Opposite{
+    fn opposite(&self) -> Self;
+}
 
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub struct Unit<T: Default + Eq + PartialEq + Copy + Opposite>{
@@ -239,7 +242,7 @@ impl Cell{
     pub fn force_collapse(&mut self, seed: u64){
         let coll = match self {
             Cell::Collapsed(_) => return,
-            Cell::Uncollapsed(u) => u[usize::rands_range(0, u.len(), seed)],
+            Cell::Uncollapsed(u) => u[rands_range(0, u.len(), seed)],
         };
 
         *self = Cell::Collapsed(coll);
@@ -309,6 +312,7 @@ impl<BorderT: Eq + PartialEq + Default + Copy + Opposite>  FiniteMap<BorderT>{
         if north.entropy() == entropy && south.entropy() == entropy && east.entropy() == entropy && west.entropy() == entropy {
             return false;
         }
+        
         else{
             // wacky shit bc I still don't understand the 
             // borrow checker lmao
@@ -345,8 +349,8 @@ impl<BorderT: Eq + PartialEq + Default + Copy + Opposite>  FiniteMap<BorderT>{
     pub fn cirular_collapse(&mut self, i: usize, j: usize){
         for r in 0..=(self.width + self.height){
             for step in 1..= 4 * r{
-                let ni = i as i64 + xdia(step as u64, r as u64);
-                let nj = j as i64 + ydia(step as u64, r as u64);
+                let ni = i as i64 + x_diamond(step as u64, r as u64);
+                let nj = j as i64 + y_diamond(step as u64, r as u64);
 
                 if ni < 0 || ni >= self.width as i64 || nj < 0 || nj >= self.height as i64 {
                     continue;
@@ -363,8 +367,8 @@ impl<BorderT: Eq + PartialEq + Default + Copy + Opposite>  FiniteMap<BorderT>{
     }
 
     pub fn determine(&mut self) {
-        let ci = usize::rands_range(0, self.width,  self.seed);
-        let cj = usize::rands_range(0, self.height, self.seed + ci as u64);
+        let ci = rands_range(0, self.width,  self.seed);
+        let cj = rands_range(0, self.height, self.seed + ci as u64);
 
         self.force_collapse(ci, cj);
         self.cirular_collapse(ci, cj);
@@ -374,7 +378,7 @@ impl<BorderT: Eq + PartialEq + Default + Copy + Opposite>  FiniteMap<BorderT>{
             if v.vec.len() == 0{
                 break;
             }
-            let cp = v.vec[usize::rand_range(0, v.vec.len())];
+            let cp = v.vec[rand_range(0, v.vec.len())];
             self.force_collapse(cp[0], cp[1]);
             self.cirular_collapse(cp[0], cp[1]);
         }
@@ -403,4 +407,3 @@ impl<BorderT: Eq + PartialEq + Default + Copy + Opposite>  FiniteMap<BorderT>{
         return LeastContainer {vec, grade: min_grade};
     }
 }
-*/

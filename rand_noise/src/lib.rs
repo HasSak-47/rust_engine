@@ -5,3 +5,5 @@ pub mod random;
 pub mod wave;
 pub mod baked;
 pub mod converter;
+
+pub mod wave_refactor;

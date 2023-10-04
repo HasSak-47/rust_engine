@@ -13,7 +13,6 @@ use ash::extensions::khr::XlibSurface;
 use ash::extensions::ext::DebugUtils;
 use ash::extensions::khr::Surface;
 
-use std::ffi::CStr;
 #[cfg(all(unix, not(target_os = "android"), not(target_os = "macos")))]
 pub fn required_extension_names() -> Vec<*const i8> {
 

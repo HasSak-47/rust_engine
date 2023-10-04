@@ -12,7 +12,7 @@ impl WorleyWrapping{
         WorleyWrapping {grid: Grid2d::new(x, y, seed)}
     }
 
-    pub fn init(&mut self) {
+    pub fn init(&mut self) -> &mut Self{
         let x = self.grid.x as u64;
         let random = |xr: usize, yr: usize, seed: u64| -> (f32, f32) {
             let (xr, yr) = (xr as u64, yr as u64);
@@ -24,6 +24,7 @@ impl WorleyWrapping{
         };
         self.grid.init(random);
         //WorleyWrapping { grid: Grid2d::init(x, y, seed, random)}
+        self
     }
 }
 

@@ -27,7 +27,7 @@ impl<T: Debug> Grid2d<T> {
     pub fn init(&mut self, gen: impl Fn(usize, usize, u64) -> T){
         let x = self.x;
         let y = self.y;
-        let seed = self.seed;
+        let _seed = self.seed;
 
         let total_len = x * y;
         for i in 0..total_len{

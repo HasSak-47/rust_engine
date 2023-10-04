@@ -1,4 +1,4 @@
-use std::{f32::consts::PI, num::Wrapping};
+use std::f32::consts::PI;
 
 use super::{
     base::{Grid2d, Engine2d},
@@ -10,19 +10,19 @@ pub struct PerlinWrapping{
 }
 
 impl PerlinWrapping{
-    fn fuck_number(a: u64, b: u64) -> u64{
-        let a = Wrapping(a);
-        let b = Wrapping(b);
-        let mut r = (a * b) + a + b;
+    // fn fuck_number(a: u64, b: u64) -> u64{
+    //     let a = Wrapping(a);
+    //     let b = Wrapping(b);
+    //     let r = (a * b) + a + b;
 
-        r.0
-    }
+    //     r.0
+    // }
 
     pub const fn new(x: usize, y: usize, seed: u64) -> Self{
         PerlinWrapping {grid: Grid2d::new(x, y, seed)}
     }
 
-    pub fn init(&mut self) {
+    pub fn init(&mut self) -> &mut Self{
 
         let x = self.grid.x.clone();
 
@@ -36,7 +36,7 @@ impl PerlinWrapping{
 
 
         self.grid.init(random);
-        //PerlinWrapping {grid: Grid2d::init(seed, random)}
+        self
     }
 }
 
