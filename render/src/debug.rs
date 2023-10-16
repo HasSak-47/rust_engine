@@ -1,7 +1,7 @@
 // FUCKING WILD WAY TO IMPLEMENT HALF OF THIS SHIT BUT OKAY
 use ash::{self, vk};
 
-const VALIDATION_LAYERS : &[*const i8] = &[
+pub const VALIDATION_LAYERS : &[*const i8] = &[
     "VK_LAYER_KHRONOS_validation\0".as_ptr() as *const i8,
 ];
 pub const ENABLE_VALIDATION : bool = true;
@@ -43,7 +43,8 @@ fn cmp_str(a: *const i8, b: *const i8) -> bool{
 }
 
 pub fn check_validation_layer_support(entry: &ash::Entry) -> bool{
-    let layer_properties = entry.enumerate_instance_layer_properties()
+    let layer_properties = entry
+        .enumerate_instance_layer_properties()
         .expect("Failed to enumerate_instance_layer_properties");
 
     if layer_properties.len() <= 0{
@@ -58,8 +59,8 @@ pub fn check_validation_layer_support(entry: &ash::Entry) -> bool{
     }
 
     for val_layer in VALIDATION_LAYERS{
-
         let mut found = false;
+
         for aval_layer in layer_properties.iter(){
             let aval_name = aval_layer.layer_name.as_ptr();
             if cmp_str(aval_name, *val_layer) {
