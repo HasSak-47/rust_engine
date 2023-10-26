@@ -4,6 +4,7 @@
 mod platform;
 mod consts;
 mod debug;
+mod utils;
 
 use std::os::raw::c_void;
 
@@ -29,6 +30,7 @@ struct VulkanApp{
     instance: ash::Instance,
     debug_utils_loader: ash::extensions::ext::DebugUtils,
     debug_messanger: ash::vk::DebugUtilsMessengerEXT,
+    _physical_device: vk::PhysicalDevice,
 }
 
 pub use consts::*;
@@ -40,6 +42,7 @@ impl VulkanApp{
     pub fn new() -> Self{
         let _entry = unsafe{ ash::Entry::load().unwrap() };
         let instance = Self::create_instance(&_entry);
+        let physical_device = Self::pick_physical_device(&instance);
 
         let utils = debug::setup_debug_utils(&_entry, &instance);
         Self{
@@ -47,6 +50,8 @@ impl VulkanApp{
             instance,
             debug_utils_loader: utils.0,
             debug_messanger: utils.1,
+            _physical_device : physical_device,
+
         }
     } 
 
@@ -102,9 +107,28 @@ impl VulkanApp{
         instance
     }
 
+    fn pick_physical_device(instance: &ash::Instance) -> vk::PhysicalDevice{
+        let physical_devices = unsafe{ instance.enumerate_physical_devices().expect("failed to enumareta physical devices") };
+        println!("physical devices with vulkan support {}", physical_devices.len());
+        let mut result = None;
+
+        for &physical_device in physical_devices.iter(){
+            if Self::is_physical_device_suitable(instance, physical_device){
+                if result.is_none(){
+                    result = Some(physical_device)
+                }
+            }
+        }
+        match result {
+            None => panic!("Failed to find a suitable GPU!"),
+            Some(physical_device) => physical_device,
+        }
+    }
+
+
     fn is_physical_device_suitable(instance: &ash::Instance, physical_device: vk::PhysicalDevice) -> bool{
-        let device_properties = unsafe {instance.get_physical_device_properties(physical_device)}
-        let device_features   = unsafe {instance.get_physical_device_features(physical_device)}
+        let device_properties = unsafe {instance.get_physical_device_properties(physical_device)};
+        let device_features   = unsafe {instance.get_physical_device_features(physical_device)};
 
         let device_queue_families = unsafe{
             instance.get_physical_device_queue_family_properties(physical_device)
@@ -116,16 +140,56 @@ impl VulkanApp{
             vk::PhysicalDeviceType::DISCRETE_GPU   => "Discrete GPU",
             vk::PhysicalDeviceType::VIRTUAL_GPU    => "Virtual GPU",
             vk::PhysicalDeviceType::OTHER          => "Other",
+            _ => "Other2",
         };
 
-        let device_name = device_properties.device_name;
+        let device_name = utils::i8_to_str(device_properties.device_name.as_slice());
+        let device_id = device_properties.device_id;
+
+        println!("Device name: {device_name} id: {device_id}, type: {device_type}");
+
         let major_version = vk::api_version_major(device_properties.api_version);
         let minor_version = vk::api_version_minor(device_properties.api_version);
         let patch_version = vk::api_version_patch(device_properties.api_version);
 
+        println!("API Version {major_version}.{minor_version}.{patch_version}");
+
+        println!("\t Suport Queue Family {}", device_queue_families.len());
+        println!("\t\t Queue count | Graphics, Compute, Transfer, Sparse, Binding");
         for queue_family in device_queue_families.iter(){
+            println!("{} {} {} {}",
+                is_x!(queue_family.queue_flags.contains(vk::QueueFlags::GRAPHICS)),
+                is_x!(queue_family.queue_flags.contains(vk::QueueFlags::COMPUTE)),
+                is_x!(queue_family.queue_flags.contains(vk::QueueFlags::TRANSFER)),
+                is_x!(queue_family.queue_flags.contains(vk::QueueFlags::SPARSE_BINDING)),
+            )
         }
 
+        // let indices = Self::find_queue_family(instance, physical_device);
+        return true;
+    }
+
+    fn find_queue_family(instance: &ash::Instance, physical_device: vk::PhysicalDevice) -> QueueFamilyIndices{
+
+        let queue_families = unsafe{ instance.get_physical_device_queue_family_properties(physical_device) };
+        let mut queue_family_indices = QueueFamilyIndices{
+            graphics_family: None,
+        };
+
+        let mut index = 0;
+        for queue_family in queue_families.iter(){
+            if queue_family.queue_count > 0 && queue_family.queue_flags.contains(vk::QueueFlags::GRAPHICS){
+                queue_family_indices.graphics_family = Some(index);
+            }
+
+            if queue_family_indices.is_complete(){
+                break;
+            }
+            index += 1;
+
+        }
+
+        queue_family_indices
     }
 
     fn init_window(event_loop: &EventLoop<()>) -> winit::window::Window {
