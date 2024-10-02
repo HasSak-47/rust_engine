@@ -1,11 +1,4 @@
 [project]
-name="Swiedowski"
-version="0.0.0"
-edition="0.0.0"
-
-[[subproject]]
-relative_path="engine/status.toml"
-[[subproject]]
-relative_path="math/status.toml"
-[[subproject]]
-relative_path="rand_noise/status.toml"
+name = "Swiedowski"
+version = "0.0.0"
+edition = "0.1.0"
